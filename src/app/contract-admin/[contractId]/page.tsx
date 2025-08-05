@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { 
   FileText, 
   Calendar, 
@@ -98,11 +99,85 @@ import {
   Hash as HashIcon5,
   Hash as HashIcon6,
   Hash as HashIcon7,
+  UserPlus,
+  ArrowRight,
+  Lightbulb,
   Hash as HashIcon8,
   Hash as HashIcon9,
   Hash as HashIcon10
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+
+interface DeliverableTask {
+  id: string
+  title: string
+  description: string
+  status: 'unassigned' | 'assigned' | 'in-progress' | 'completed' | 'overdue'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  assignedTo?: string
+  dueDate: string
+  estimatedHours: number
+  actualHours?: number
+  dependencies: string[]
+  attachments: string[]
+  comments: {
+    id: string
+    author: string
+    content: string
+    timestamp: string
+  }[]
+  qualityChecklist: {
+    id: string
+    item: string
+    completed: boolean
+  }[]
+  timeTracking: {
+    startTime?: string
+    endTime?: string
+    totalTime: number
+  }
+}
+
+interface Deliverable {
+  id: string
+  title: string
+  description: string
+  type: 'milestone' | 'deliverable' | 'report' | 'inspection'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  status: 'pending' | 'in-progress' | 'completed' | 'overdue'
+  assignedTo: string
+  dueDate: string
+  progress: number
+  riskLevel: 'low' | 'medium' | 'high' | 'critical'
+  qualityScore: number
+  stakeholders: string[]
+  dependencies: string[]
+  attachments: string[]
+  comments: {
+    id: string
+    author: string
+    content: string
+    timestamp: string
+  }[]
+  metrics: {
+    onTime: boolean
+    onBudget: boolean
+    qualityMet: boolean
+    customerSatisfaction: number
+  }
+  automation: {
+    autoReminders: boolean
+    autoEscalation: boolean
+    autoReporting: boolean
+  }
+  tasks: DeliverableTask[]
+  completionGuidance: {
+    nextSteps: string[]
+    recommendations: string[]
+    followUpActions: string[]
+    successMetrics: string[]
+  }
+}
 
 interface Contract {
   id: string
@@ -268,6 +343,10 @@ export default function ContractWorkspacePage() {
   const contractId = params.contractId as string
   const [activeTab, setActiveTab] = useState('dashboard')
   
+  // Task Management State
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [selectedDeliverable, setSelectedDeliverable] = useState<Deliverable | null>(null)
+
   // Subcontractor Management State
   const [subcontractorFilter, setSubcontractorFilter] = useState('all')
   const [subcontractorSearch, setSubcontractorSearch] = useState('')
@@ -303,6 +382,165 @@ export default function ContractWorkspacePage() {
       overall: 92
     }
   })
+
+  const [deliverables] = useState<Deliverable[]>([
+    {
+      id: 'd-001',
+      title: 'Monthly Performance Report',
+      description: 'Comprehensive monthly performance report covering all contract metrics and deliverables',
+      type: 'report',
+      priority: 'high',
+      status: 'pending',
+      assignedTo: 'Mike Davis',
+      dueDate: '2025-08-31',
+      progress: 65,
+      riskLevel: 'medium',
+      qualityScore: 85,
+      stakeholders: ['Contracting Officer', 'COR', 'Project Manager'],
+      dependencies: ['Data Collection', 'Analysis'],
+      attachments: ['template.docx', 'guidelines.pdf'],
+      comments: [
+        { id: 'c1', author: 'Mike Davis', content: 'Started data collection phase', timestamp: '2025-08-15T10:00:00Z' }
+      ],
+      metrics: {
+        onTime: true,
+        onBudget: true,
+        qualityMet: true,
+        customerSatisfaction: 4.2
+      },
+      automation: {
+        autoReminders: true,
+        autoEscalation: false,
+        autoReporting: true
+      },
+      tasks: [
+        {
+          id: 't1',
+          title: 'Data Collection',
+          description: 'Gather all performance metrics and data points',
+          status: 'completed',
+          priority: 'high',
+          assignedTo: 'Mike Davis',
+          dueDate: '2025-08-20',
+          estimatedHours: 8,
+          actualHours: 7,
+          dependencies: [],
+          attachments: ['data-template.xlsx'],
+          comments: [],
+          qualityChecklist: [
+            { id: 'qc1', item: 'Verify data accuracy', completed: true },
+            { id: 'qc2', item: 'Cross-reference with previous reports', completed: true }
+          ],
+          timeTracking: { totalTime: 7 }
+        },
+        {
+          id: 't2',
+          title: 'Analysis and Review',
+          description: 'Analyze collected data and prepare insights',
+          status: 'in-progress',
+          priority: 'high',
+          assignedTo: 'Mike Davis',
+          dueDate: '2025-08-25',
+          estimatedHours: 12,
+          actualHours: 6,
+          dependencies: ['t1'],
+          attachments: ['analysis-template.docx'],
+          comments: [
+            { id: 'c2', author: 'Mike Davis', content: 'Analysis phase started', timestamp: '2025-08-21T14:00:00Z' }
+          ],
+          qualityChecklist: [
+            { id: 'qc3', item: 'Review trends and patterns', completed: false },
+            { id: 'qc4', item: 'Validate conclusions', completed: false }
+          ],
+          timeTracking: { startTime: '2025-08-21T09:00:00Z', totalTime: 6 }
+        }
+      ],
+      completionGuidance: {
+        nextSteps: ['Submit for review', 'Schedule presentation', 'Archive report'],
+        recommendations: ['Include more visual data', 'Add executive summary'],
+        followUpActions: ['Follow up with stakeholders', 'Update project timeline'],
+        successMetrics: ['Approval within 48 hours', 'No major revisions required']
+      }
+    },
+    {
+      id: 'd-002',
+      title: 'Quality Control Plan Implementation',
+      description: 'Implementation and documentation of quality control procedures for HVAC maintenance services',
+      type: 'milestone',
+      priority: 'critical',
+      status: 'in-progress',
+      assignedTo: 'Sarah Johnson',
+      dueDate: '2025-09-15',
+      progress: 75,
+      riskLevel: 'high',
+      qualityScore: 90,
+      stakeholders: ['Quality Manager', 'Safety Officer', 'Project Manager'],
+      dependencies: ['Training Completion', 'Equipment Setup'],
+      attachments: ['qc-plan.pdf', 'procedures.docx'],
+      comments: [
+        { id: 'c3', author: 'Sarah Johnson', content: 'QC procedures documented', timestamp: '2025-08-18T16:00:00Z' }
+      ],
+      metrics: {
+        onTime: true,
+        onBudget: true,
+        qualityMet: true,
+        customerSatisfaction: 4.5
+      },
+      automation: {
+        autoReminders: true,
+        autoEscalation: true,
+        autoReporting: true
+      },
+      tasks: [
+        {
+          id: 't3',
+          title: 'Document QC Procedures',
+          description: 'Create comprehensive quality control procedures',
+          status: 'completed',
+          priority: 'critical',
+          assignedTo: 'Sarah Johnson',
+          dueDate: '2025-08-20',
+          estimatedHours: 16,
+          actualHours: 14,
+          dependencies: [],
+          attachments: ['qc-procedures.docx'],
+          comments: [],
+          qualityChecklist: [
+            { id: 'qc5', item: 'Review with safety team', completed: true },
+            { id: 'qc6', item: 'Validate compliance requirements', completed: true }
+          ],
+          timeTracking: { totalTime: 14 }
+        },
+        {
+          id: 't4',
+          title: 'Train Team Members',
+          description: 'Conduct training sessions for all team members',
+          status: 'in-progress',
+          priority: 'high',
+          assignedTo: 'Sarah Johnson',
+          dueDate: '2025-08-30',
+          estimatedHours: 20,
+          actualHours: 12,
+          dependencies: ['t3'],
+          attachments: ['training-materials.pptx'],
+          comments: [
+            { id: 'c4', author: 'Sarah Johnson', content: 'Training sessions scheduled', timestamp: '2025-08-22T11:00:00Z' }
+          ],
+          qualityChecklist: [
+            { id: 'qc7', item: 'Complete all training modules', completed: false },
+            { id: 'qc8', item: 'Verify understanding', completed: false }
+          ],
+          timeTracking: { startTime: '2025-08-22T09:00:00Z', totalTime: 12 }
+        }
+      ],
+      completionGuidance: {
+        nextSteps: ['Finalize training', 'Conduct pilot implementation', 'Full deployment'],
+        recommendations: ['Include hands-on practice sessions', 'Add refresher training schedule'],
+        followUpActions: ['Monitor implementation effectiveness', 'Collect feedback'],
+        successMetrics: ['100% team training completion', 'Zero quality incidents']
+      }
+    }
+  ])
 
   const [subcontractors] = useState<Subcontractor[]>([
     {
@@ -501,6 +739,37 @@ export default function ContractWorkspacePage() {
   ])
 
   // Subcontractor Management Functions
+  const getTaskStats = (deliverable: Deliverable) => {
+    const tasks = deliverable.tasks || []
+    return {
+      total: tasks.length,
+      completed: tasks.filter(t => t.status === 'completed').length,
+      inProgress: tasks.filter(t => t.status === 'in-progress').length,
+      unassigned: tasks.filter(t => t.status === 'unassigned').length
+    }
+  }
+
+  const getCompletionGuidance = (deliverable: Deliverable) => {
+    return deliverable.completionGuidance || {
+      nextSteps: [],
+      recommendations: [],
+      followUpActions: [],
+      successMetrics: []
+    }
+  }
+
+  const assignTask = (taskId: string, assignee: string) => {
+    console.log(`Assigning task ${taskId} to ${assignee}`)
+  }
+
+  const addToCalendar = (taskId: string) => {
+    console.log(`Adding task ${taskId} to calendar`)
+  }
+
+  const updateTaskProgress = (taskId: string, progress: number) => {
+    console.log(`Updating task ${taskId} progress to ${progress}%`)
+  }
+
   const getSubcontractorStats = () => {
     const total = subcontractors.length
     const active = subcontractors.filter(s => s.status === 'active').length
@@ -918,98 +1187,250 @@ export default function ContractWorkspacePage() {
 
       {/* Deliverables Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="card-premium p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <h4 className="font-semibold text-gray-900">Monthly Performance Report</h4>
-                <Badge variant="default" className="text-xs">HIGH</Badge>
-                <Badge variant="outline" className="text-xs">PENDING</Badge>
+        {deliverables.map((deliverable) => {
+          const taskStats = getTaskStats(deliverable)
+          return (
+            <Card key={deliverable.id} className="card-premium p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="font-semibold text-gray-900">{deliverable.title}</h4>
+                    <Badge 
+                      variant={deliverable.priority === 'critical' ? 'destructive' : deliverable.priority === 'high' ? 'default' : 'secondary'} 
+                      className="text-xs"
+                    >
+                      {deliverable.priority.toUpperCase()}
+                    </Badge>
+                    <Badge 
+                      variant={deliverable.status === 'completed' ? 'default' : deliverable.status === 'in-progress' ? 'secondary' : 'outline'} 
+                      className="text-xs"
+                    >
+                      {deliverable.status.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{deliverable.description}</p>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <span>Assigned: {deliverable.assignedTo}</span>
+                    <span>Due: {deliverable.dueDate}</span>
+                    <span>Type: {deliverable.type}</span>
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-gray-600 mb-2">Comprehensive monthly status report covering quality metrics, schedule adherence, cost performance, and subcontractor performance metrics</p>
-              <div className="flex items-center space-x-4 text-xs text-gray-500">
-                <span>Assigned: Mike Davis</span>
-                <span>Due: 2025-08-31</span>
-                <span>Type: report</span>
+
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Progress</span>
+                  <span className="font-semibold">{deliverable.progress}%</span>
+                </div>
+                <Progress value={deliverable.progress} className="h-2" />
+                
+                {/* Task Overview */}
+                <div className="flex items-center space-x-4 text-xs text-gray-500">
+                  <span>Tasks: {taskStats.completed}/{taskStats.total} completed</span>
+                  <span>Risk: {deliverable.riskLevel}</span>
+                  <span>Quality: {deliverable.qualityScore}/100</span>
+                </div>
               </div>
-            </div>
-          </div>
 
-          <div className="space-y-3 mb-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Progress</span>
-              <span className="font-semibold">65%</span>
-            </div>
-            <Progress value={65} className="h-2" />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Eye className="h-4 w-4 mr-1" />
-              View Details
-            </Button>
-            <Button variant="outline" size="sm">
-              <ClipboardList className="h-4 w-4 mr-1" />
-              Tasks
-            </Button>
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-1" />
-              Upload
-            </Button>
-            <Button variant="outline" size="sm">
-              <MessageSquare className="h-4 w-4 mr-1" />
-              Comments
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="card-premium p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2 mb-2">
-                <h4 className="font-semibold text-gray-900">Quality Control Plan Implementation</h4>
-                <Badge variant="destructive" className="text-xs">CRITICAL</Badge>
-                <Badge variant="secondary" className="text-xs">IN-PROGRESS</Badge>
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-1" />
+                  View Details
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedDeliverable(deliverable)
+                    setShowTaskModal(true)
+                  }}
+                >
+                  <ClipboardList className="h-4 w-4 mr-1" />
+                  Tasks
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-1" />
+                  Upload
+                </Button>
+                <Button variant="outline" size="sm">
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  Comments
+                </Button>
               </div>
-              <p className="text-sm text-gray-600 mb-2">Implementation and documentation of quality control procedures for HVAC maintenance services</p>
-              <div className="flex items-center space-x-4 text-xs text-gray-500">
-                <span>Assigned: Sarah Johnson</span>
-                <span>Due: 2025-09-15</span>
-                <span>Type: milestone</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3 mb-4">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">Progress</span>
-              <span className="font-semibold">75%</span>
-            </div>
-            <Progress value={75} className="h-2" />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Eye className="h-4 w-4 mr-1" />
-              View Details
-            </Button>
-            <Button variant="outline" size="sm">
-              <ClipboardList className="h-4 w-4 mr-1" />
-              Tasks
-            </Button>
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-1" />
-              Upload
-            </Button>
-            <Button variant="outline" size="sm">
-              <MessageSquare className="h-4 w-4 mr-1" />
-              Comments
-            </Button>
-          </div>
-        </Card>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
+
+  const renderTaskModal = () => {
+    if (!selectedDeliverable) return null
+
+    const taskStats = getTaskStats(selectedDeliverable)
+    const completionGuidance = getCompletionGuidance(selectedDeliverable)
+
+    return (
+      <Dialog open={showTaskModal} onOpenChange={setShowTaskModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <ClipboardList className="h-5 w-5" />
+              <span>Task Management - {selectedDeliverable.title}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Manage tasks for this deliverable. Track progress, assign work, and monitor completion.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Task Statistics */}
+            <Card className="p-4">
+              <h4 className="font-semibold mb-3">Task Overview</h4>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{taskStats.total}</div>
+                  <div className="text-sm text-gray-600">Total Tasks</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{taskStats.completed}</div>
+                  <div className="text-sm text-gray-600">Completed</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">{taskStats.inProgress}</div>
+                  <div className="text-sm text-gray-600">In Progress</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">{taskStats.unassigned}</div>
+                  <div className="text-sm text-gray-600">Unassigned</div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Individual Tasks */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold">Tasks</h4>
+                <Button size="sm">
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Task
+                </Button>
+              </div>
+              
+              {selectedDeliverable.tasks.map((task) => (
+                <Card key={task.id} className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h5 className="font-medium">{task.title}</h5>
+                        <Badge variant={task.status === 'completed' ? 'default' : task.status === 'in-progress' ? 'secondary' : 'outline'}>
+                          {task.status.toUpperCase()}
+                        </Badge>
+                        <Badge variant={task.priority === 'critical' ? 'destructive' : task.priority === 'high' ? 'default' : 'secondary'}>
+                          {task.priority.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{task.description}</p>
+                      
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <span className="text-gray-500">Assigned:</span>
+                          <p className="font-medium">{task.assignedTo || 'Unassigned'}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Due:</span>
+                          <p className="font-medium">{task.dueDate}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Hours:</span>
+                          <p className="font-medium">{task.actualHours || 0}/{task.estimatedHours}</p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Dependencies:</span>
+                          <p className="font-medium">{task.dependencies.length}</p>
+                        </div>
+                      </div>
+
+                      {/* Quality Checklist */}
+                      {task.qualityChecklist.length > 0 && (
+                        <div className="mt-3">
+                          <h6 className="text-sm font-medium mb-2">Quality Checklist</h6>
+                          <div className="space-y-1">
+                            {task.qualityChecklist.map((item) => (
+                              <div key={item.id} className="flex items-center space-x-2 text-sm">
+                                <div className={`w-4 h-4 border rounded ${item.completed ? 'bg-blue-500 border-blue-500' : 'border-gray-300'}`}>
+                                  {item.completed && <CheckSquare className="w-3 h-3 text-white" />}
+                                </div>
+                                <span className={item.completed ? 'line-through text-gray-500' : ''}>
+                                  {item.item}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col space-y-2 ml-4">
+                      <Button variant="outline" size="sm" onClick={() => assignTask(task.id, 'New Assignee')}>
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        Assign
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => addToCalendar(task.id)}>
+                        <Calendar className="h-4 w-4 mr-1" />
+                        Calendar
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => updateTaskProgress(task.id, 50)}>
+                        <Edit className="h-4 w-4 mr-1" />
+                        Update
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Completion Guidance */}
+            {completionGuidance.nextSteps.length > 0 && (
+              <Card className="p-4 bg-blue-50">
+                <h4 className="font-semibold mb-3 text-blue-900">Completion Guidance</h4>
+                <div className="space-y-3">
+                  <div>
+                    <h5 className="text-sm font-medium text-blue-800 mb-1">Next Steps</h5>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      {completionGuidance.nextSteps.map((step, index) => (
+                        <li key={index} className="flex items-center space-x-2">
+                          <ArrowRight className="h-3 w-3" />
+                          <span>{step}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-medium text-blue-800 mb-1">Recommendations</h5>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      {completionGuidance.recommendations.map((rec, index) => (
+                        <li key={index} className="flex items-center space-x-2">
+                          <Lightbulb className="h-3 w-3" />
+                          <span>{rec}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTaskModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
+  }
 
   const renderSubcontractorsTab = () => {
     const stats = getSubcontractorStats()
@@ -1469,6 +1890,9 @@ export default function ContractWorkspacePage() {
 
           {/* Add other tab contents here */}
         </Tabs>
+
+        {/* Task Management Modal */}
+        {renderTaskModal()}
       </div>
     </div>
   )
