@@ -104,7 +104,8 @@ import {
   UserPlus,
   Target,
   BarChart3,
-  DollarSign as DollarSignIcon
+  DollarSign as DollarSignIcon,
+  Calculator
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBidStore, Subcontractor } from '@/app/shared/stores/useBidStore'
@@ -1749,6 +1750,481 @@ export default function SubcontractorManagementPage() {
     </div>
   )
 
+  const renderBidReviewTab = () => (
+    <div className="space-y-6">
+      {/* Bid Review Header */}
+      <Card className="p-6 bg-gradient-to-r from-orange-50 to-red-50 border-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center mr-3">
+              <FileText className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="font-semibold text-gray-900">Subcontractor Bid Review</h3>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-orange-600">
+              {subcontractors.filter(sub => sub.bidStatus === 'submitted').length}
+            </div>
+            <div className="text-sm text-gray-600">Bids to Review</div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Individual Bid Reviews */}
+      {subcontractors.map((subcontractor) => (
+        <Card key={subcontractor.id} className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                <span className="text-blue-600 font-bold text-lg">{subcontractor.logo}</span>
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900">{subcontractor.name}</h4>
+                <p className="text-gray-600">{subcontractor.type} • {subcontractor.location}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <Badge className={
+                subcontractor.bidStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                subcontractor.bidStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                subcontractor.bidStatus === 'submitted' ? 'bg-blue-100 text-blue-800' :
+                'bg-yellow-100 text-yellow-800'
+              }>
+                {subcontractor.bidStatus}
+              </Badge>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-green-600">
+                  ${subcontractor.pricing.proposedAmount.toLocaleString()}
+                </div>
+                <div className="text-sm text-gray-600">Proposed Amount</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Panel: Detailed Cost Breakdown */}
+            <div>
+              <h5 className="font-medium text-gray-900 mb-4">Detailed Cost Breakdown</h5>
+              
+              {/* Labor & Material Costs */}
+              <div className="mb-6">
+                <h6 className="text-sm font-medium text-gray-700 mb-3">Labor & Material Costs</h6>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 font-medium text-gray-700">Description</th>
+                        <th className="text-right py-2 font-medium text-gray-700">Hours</th>
+                        <th className="text-right py-2 font-medium text-gray-700">Rate</th>
+                        <th className="text-right py-2 font-medium text-gray-700">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(subcontractor.pricing.laborRates).map(([role, rate]) => (
+                        <tr key={role} className="border-b border-gray-100">
+                          <td className="py-2 text-gray-900">{role}</td>
+                          <td className="py-2 text-right text-gray-600">80</td>
+                          <td className="py-2 text-right text-gray-600">${rate}/hr</td>
+                          <td className="py-2 text-right font-medium text-gray-900">${(80 * rate).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                      <tr className="bg-blue-50">
+                        <td className="py-2 text-gray-900 font-medium">Materials</td>
+                        <td className="py-2 text-right text-gray-600">-</td>
+                        <td className="py-2 text-right text-gray-600">-</td>
+                        <td className="py-2 text-right font-medium text-blue-600">${subcontractor.pricing.materials.toLocaleString()}</td>
+                      </tr>
+                      <tr className="bg-green-50">
+                        <td className="py-2 text-gray-900 font-medium">Total Direct Costs</td>
+                        <td className="py-2 text-right text-gray-600">-</td>
+                        <td className="py-2 text-right text-gray-600">-</td>
+                        <td className="py-2 text-right font-bold text-green-600">
+                          ${(Object.values(subcontractor.pricing.laborRates).reduce((sum, rate) => sum + (80 * rate), 0) + subcontractor.pricing.materials).toLocaleString()}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Fringe Benefits */}
+              <div className="mb-6">
+                <h6 className="text-sm font-medium text-gray-700 mb-3">Fringe Benefits</h6>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-blue-500 rounded mr-3"></div>
+                      <span className="text-sm text-gray-700">Cash in lieu of benefits</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900">$4.98/hr</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Paid Holidays</span>
+                    <span className="text-sm font-medium text-gray-900">$1,280</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Vacation</span>
+                    <span className="text-sm font-medium text-gray-900">$750</span>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-gray-900">Total Fringe Cost</span>
+                      <span className="text-sm font-bold text-blue-600">$9,990</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Panel: Pricing Analysis & Actions */}
+            <div>
+              <h5 className="font-medium text-gray-900 mb-4">Pricing Analysis & Actions</h5>
+              
+              {/* Spirit AI Analysis */}
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 mb-6">
+                <div className="flex items-center mb-3">
+                  <Brain className="h-5 w-5 text-purple-600 mr-2" />
+                  <span className="font-medium text-purple-900">Spirit AI Analysis</span>
+                </div>
+                <p className="text-sm text-purple-800 mb-4">
+                  This pricing is within a fair range for Louisiana HVAC projects (51-55% markup).
+                </p>
+                
+                {/* Markup Slider */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-600">Markup / Margin</span>
+                    <span className="text-xs font-medium text-gray-900">52%</span>
+                  </div>
+                  <div className="relative">
+                    <div className="h-2 bg-gray-200 rounded-full">
+                      <div className="h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 rounded-full relative">
+                        <div className="absolute top-0 right-1/3 w-1 h-2 bg-white border border-gray-300 rounded-full transform translate-x-1/2"></div>
+                      </div>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>Low</span>
+                      <span>Fair</span>
+                      <span>High</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <p className="text-sm text-purple-800">
+                  This pricing is within a fair range for Louisiana HVAC projects (51-55% markup).
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3">
+                <div className="flex space-x-3">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
+                    onClick={() => {
+                      updateSubcontractor(rfpId, subcontractor.id, { bidStatus: 'rejected' })
+                    }}
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Reject
+                  </Button>
+                  <Button 
+                    className="flex-1 bg-blue-600 hover:bg-blue-700"
+                    onClick={() => {
+                      updateSubcontractor(rfpId, subcontractor.id, { bidStatus: 'approved' })
+                    }}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve
+                  </Button>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <Button variant="outline" className="flex-1">
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Request Changes
+                  </Button>
+                  <Button variant="outline" className="flex-1">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate LOI
+                  </Button>
+                </div>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h6 className="font-medium text-gray-900 mb-3">Performance Metrics</h6>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Past Performance:</span>
+                    <span className="font-medium">{subcontractor.pastPerformance}/5.0</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Price Competitiveness:</span>
+                    <span className="font-medium">{subcontractor.priceCompetitiveness}%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Match Score:</span>
+                    <span className="font-medium">{subcontractor.matchScore}%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Availability:</span>
+                    <Badge className={
+                      subcontractor.availability === 'high' ? 'bg-green-100 text-green-800' :
+                      subcontractor.availability === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }>
+                      {subcontractor.availability}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
+
+  const renderScopeAssignmentTab = () => (
+    <div className="space-y-6">
+      {/* Scope Assignment Header */}
+      <Card className="p-6 bg-gradient-to-r from-green-50 to-blue-50 border-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center mr-3">
+              <Target className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="font-semibold text-gray-900">Scope Assignment Panel</h3>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-green-600">
+              ${subcontractors.reduce((total, sub) => total + sub.assignedWork.estimatedValue, 0).toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-600">Total Assigned Value</div>
+          </div>
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Panel: Task Selection */}
+        <Card className="p-6">
+          <h4 className="font-medium text-gray-900 mb-4">Task Selection</h4>
+          
+          {/* Search */}
+          <div className="mb-4">
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* HVAC Installation Tasks */}
+          <div className="mb-6">
+            <h5 className="text-sm font-medium text-gray-700 mb-3">HVAC Installation</h5>
+            <div className="space-y-2">
+              {[
+                { id: 'remove-units', name: 'Remove existing units', checked: true },
+                { id: 'install-units', name: 'Install new units', checked: true },
+                { id: 'startup-testing', name: 'Perform startup and testing', checked: false },
+                { id: 'commission', name: 'Commission system', checked: false }
+              ].map((task) => (
+                <div key={task.id} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id={task.id}
+                    checked={task.checked}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor={task.id} className="ml-2 text-sm text-gray-700">
+                    {task.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Project Metadata */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h5 className="text-sm font-medium text-gray-700 mb-3">Project Metadata</h5>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div><span className="font-medium">Duration:</span> 5 days</div>
+              <div><span className="font-medium">Includes:</span> Licensed HVAC</div>
+              <div><span className="font-medium">Classification:</span> Project Safety Plan</div>
+              <div><span className="font-medium">Meta TVIT:</span> 5reay</div>
+              <div><span className="font-medium">Requires:</span> Missing HVAC LAG must</div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Middle Panel: Reliable Mechanical */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                <span className="text-blue-600 font-bold text-sm">RM</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900">Reliable Mechanical</h4>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-green-100 text-green-800">82% Ready</Badge>
+                  <div className="flex items-center text-sm text-red-600">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    -35% capacity
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center text-sm text-yellow-600">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Insurance
+              </div>
+            </div>
+          </div>
+
+          {/* Assigned Tasks */}
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-sm font-medium">Install new units</span>
+              </div>
+              <Badge className="bg-blue-100 text-blue-800">Assigned</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-sm font-medium">Perform startup and testing</span>
+              </div>
+              <Badge className="bg-blue-100 text-blue-800">Assigned</Badge>
+            </div>
+          </div>
+
+          {/* Cost Impact */}
+          <div className="mb-4 p-3 bg-green-50 rounded-lg">
+            <div className="text-sm font-medium text-green-800">
+              Impact: +$800 to baseline cost
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-2">
+            <Button variant="outline" className="flex-1">
+              <FileText className="h-4 w-4 mr-2" />
+              LOI Generator
+            </Button>
+            <Button variant="outline" className="flex-1">
+              <Calculator className="h-4 w-4 mr-2" />
+              Pricing Estimator
+            </Button>
+          </div>
+        </Card>
+
+        {/* Right Panel: Statewide HVAC */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                <span className="text-green-600 font-bold text-sm">SH</span>
+              </div>
+              <div>
+                <h4 className="font-medium text-gray-900">Statewide HVAC</h4>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-green-100 text-green-800">94% Ready</Badge>
+                  <div className="flex items-center text-sm text-green-600">
+                    <TrendingUp className="h-3 w-3 mr-1" />
+                    +20% capacity
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="flex items-center text-sm text-green-600">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                License
+              </div>
+            </div>
+          </div>
+
+          {/* Assigned Tasks */}
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-sm font-medium">Remove existing units</span>
+              </div>
+              <Badge className="bg-green-100 text-green-800">Assigned</Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-sm font-medium">Perform startup and testing</span>
+              </div>
+              <Badge className="bg-green-100 text-green-800">Assigned</Badge>
+            </div>
+          </div>
+
+          {/* Cost Impact */}
+          <div className="mb-4 p-3 bg-green-50 rounded-lg">
+            <div className="text-sm font-medium text-green-800">
+              Impact: +$1,800 to baseline cost
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex space-x-2">
+            <Button variant="outline" className="flex-1">
+              <FileText className="h-4 w-4 mr-2" />
+              LOI Generator
+            </Button>
+            <Button variant="outline" className="flex-1">
+              <Calculator className="h-4 w-4 mr-2" />
+              Pricing Estimator
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      {/* Spirit AI Recommendations */}
+      <Card className="p-6 bg-gradient-to-r from-purple-50 to-blue-50 border-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Brain className="h-5 w-5 text-purple-600 mr-2" />
+            <h4 className="font-medium text-purple-900">Spirit AI Recommendations</h4>
+          </div>
+          <Button variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50">
+            <UserPlus className="h-4 w-4 mr-2" />
+            Add a second subcontractor?
+          </Button>
+        </div>
+        <p className="text-sm text-purple-800 mt-2">
+          Split HVAC across two subcontractors for schedule optimization.
+        </p>
+      </Card>
+
+      {/* Summary */}
+      <Card className="p-6">
+        <h4 className="font-medium text-gray-900 mb-4">Assignment Summary</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-blue-50 rounded-lg">
+            <div className="text-2xl font-bold text-blue-600">2</div>
+            <div className="text-sm text-gray-600">Subcontractors Assigned</div>
+          </div>
+          <div className="text-center p-4 bg-green-50 rounded-lg">
+            <div className="text-2xl font-bold text-green-600">$2,600</div>
+            <div className="text-sm text-gray-600">Total Cost Impact</div>
+          </div>
+          <div className="text-center p-4 bg-purple-50 rounded-lg">
+            <div className="text-2xl font-bold text-purple-600">4</div>
+            <div className="text-sm text-gray-600">Tasks Assigned</div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1780,11 +2256,12 @@ export default function SubcontractorManagementPage() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Compliance Check</TabsTrigger>
-                <TabsTrigger value="pricing">Pricing Estimator</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="pricing">Pricing</TabsTrigger>
+                <TabsTrigger value="bid-review">Bid Review</TabsTrigger>
+                <TabsTrigger value="scope">Scope</TabsTrigger>
                 <TabsTrigger value="team">Team Assembly</TabsTrigger>
-                <TabsTrigger value="management">Sub Management</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="mt-6">
@@ -1795,11 +2272,15 @@ export default function SubcontractorManagementPage() {
                 {renderPricingTab()}
               </TabsContent>
               
-              <TabsContent value="team" className="mt-6">
-                {renderTeamAssemblyTab()}
+              <TabsContent value="bid-review" className="mt-6">
+                {renderBidReviewTab()}
               </TabsContent>
               
-              <TabsContent value="management" className="mt-6">
+              <TabsContent value="scope" className="mt-6">
+                {renderScopeAssignmentTab()}
+              </TabsContent>
+              
+              <TabsContent value="team" className="mt-6">
                 {renderTeamAssemblyTab()}
               </TabsContent>
             </Tabs>
