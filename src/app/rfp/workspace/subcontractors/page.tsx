@@ -98,99 +98,6 @@ import {
   MoreHorizontal,
   MoreVertical,
   ChevronUp,
-  ChevronLeft,
-  ArrowUp,
-  ArrowDown,
-  ArrowLeft,
-  ArrowUpRight,
-  ArrowDownRight,
-  ArrowDownLeft,
-  ArrowUpLeft,
-  Move,
-  RotateCcw,
-  RotateCw,
-  ZoomIn,
-  ZoomOut,
-  Maximize,
-  Minimize,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Watch,
-  Camera,
-  Video,
-  VideoOff,
-  Mic,
-  MicOff,
-  Headphones,
-  Speaker,
-  Volume,
-  Volume1,
-  Volume2,
-  VolumeX,
-  Music,
-  Music2,
-  SkipBack,
-  Rewind,
-  FastForward,
-  Shuffle,
-  Repeat,
-  Repeat1,
-  List,
-  Grid,
-  Columns,
-  Rows,
-  Layout,
-  Sidebar,
-  SidebarClose,
-  SidebarOpen,
-  PanelLeft,
-  PanelRight,
-  PanelTop,
-  PanelBottom,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  AlignJustify,
-  Bold,
-  Italic,
-  Underline,
-  Strikethrough,
-  Code,
-  Quote,
-  ListOrdered,
-  ListChecks,
-  Indent,
-  Outdent,
-  AlignStartVertical,
-  AlignCenterVertical,
-  AlignEndVertical,
-  AlignStartHorizontal,
-  AlignCenterHorizontal,
-  AlignEndHorizontal,
-  Space,
-  Type,
-  Heading1,
-  Heading2,
-  Heading3,
-  Heading4,
-  Heading5,
-  Heading6,
-  Text,
-  TextQuote,
-  Hash,
-  Link,
-  Link2,
-  Image,
-  ImageOff,
-  ImagePlus,
-  File,
-  FileImage,
-  FileVideo,
-  FileAudio,
-  FileArchive,
-  FileCode,
-  FileSpreadsheet,
   Users,
   UserCheck,
   UserX,
@@ -199,6 +106,8 @@ import {
   BarChart3
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useBidStore } from '@/app/shared/stores/useBidStore'
+import { useSearchParams } from 'next/navigation'
 
 interface Subcontractor {
   id: string
@@ -359,11 +268,39 @@ interface TeamAssemblySubcontractor {
 }
 
 export default function SubcontractorManagementPage() {
+  const searchParams = useSearchParams()
+  const rfpId = searchParams.get('rfpId') || 'rfp1'
+  
+  // Zustand Store
+  const {
+    getCurrentRFP,
+    getRFPById,
+    getTeamMembers,
+    getSubcontractors,
+    getSpiritAnalysis,
+    startTeamAnalysis,
+    updateTeamAssemblyData,
+    completeStep,
+    updateSpiritAnalysis,
+    addSubcontractor,
+    updateSubcontractor,
+    removeSubcontractor
+  } = useBidStore()
+
+  // Get current RFP data
+  const currentRFP = getRFPById(rfpId)
+  const teamMembers = getTeamMembers(rfpId)
+  const subcontractors = getSubcontractors(rfpId)
+  const spiritAnalysis = getSpiritAnalysis(rfpId)
+  const teamAssemblyData = currentRFP?.teamAssemblyData
+
+  // Local state for UI
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedSubcontractor, setSelectedSubcontractor] = useState<string | null>(null)
-  const [showSpiritAnalysis, setShowSpiritAnalysis] = useState(true)
-  const [isProcessing, setIsProcessing] = useState(false)
-  
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<string>('name')
+
   // CRUD Modal States
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -371,7 +308,6 @@ export default function SubcontractorManagementPage() {
   const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null)
   const [deletingSubcontractor, setDeletingSubcontractor] = useState<Subcontractor | null>(null)
   
-  // Form States
   const [formData, setFormData] = useState({
     name: '',
     type: '',
@@ -386,379 +322,57 @@ export default function SubcontractorManagementPage() {
     profit: 0
   })
 
-  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([
-    {
-      id: 'sub1',
-      name: 'TechSolutions Inc.',
-      type: '8(a) Small Business',
-      specialties: ['System Integration', 'Legacy Migration', 'Training'],
-      pastPerformance: 4.8,
-      priceCompetitiveness: 85,
-      availability: 'high',
-      certifications: ['CMMI Level 3', 'ISO 9001', 'ISO 27001'],
-      location: 'Reston, VA',
-      contact: {
-        name: 'Robert Wilson',
-        email: 'r.wilson@techsolutions.com',
-        phone: '(555) 456-7890'
-      },
-      matchScore: 87,
-      status: 'evaluating',
-      compliance: {
-        loi: 'signed',
-        wdAlignment: 'compliant',
-        coi: 'active',
-        licenses: 'valid',
-        debarment: 'clear'
-      },
-      pricing: {
-        hourlyRate: 125,
-        overhead: 15,
-        profit: 8,
-        total: 142.50,
-        markup: 12
-      },
-      readiness: 92,
-      riskFactors: ['Limited VA-specific experience'],
-      recommendations: ['Strong technical capabilities', 'Good past performance', 'Competitive pricing']
-    },
-    {
-      id: 'sub2',
-      name: 'SecureNet Systems',
-      type: 'Veteran-Owned Small Business',
-      specialties: ['Cybersecurity', 'Compliance', 'Security Assessments'],
-      pastPerformance: 4.6,
-      priceCompetitiveness: 78,
-      availability: 'medium',
-      certifications: ['CMMI Level 2', 'ISO 27001'],
-      location: 'Bethesda, MD',
-      contact: {
-        name: 'Lisa Rodriguez',
-        email: 'l.rodriguez@securenetsys.com',
-        phone: '(555) 567-8901'
-      },
-      matchScore: 82,
-      status: 'pending',
-      compliance: {
-        loi: 'pending',
-        wdAlignment: 'pending',
-        coi: 'active',
-        licenses: 'valid',
-        debarment: 'clear'
-      },
-      pricing: {
-        hourlyRate: 135,
-        overhead: 12,
-        profit: 10,
-        total: 166.20,
-        markup: 15
-      },
-      readiness: 65,
-      riskFactors: ['Missing LOI', 'WD alignment pending'],
-      recommendations: ['Request LOI immediately', 'Verify WD compliance']
-    },
-    {
-      id: 'sub3',
-      name: 'Data Migration Pro',
-      type: 'Large Business',
-      specialties: ['Cloud Migration', 'Data Architecture', 'System Integration'],
-      pastPerformance: 4.9,
-      priceCompetitiveness: 72,
-      availability: 'low',
-      certifications: ['ISO 27001', 'CMMI Level 3'],
-      location: 'Arlington, VA',
-      contact: {
-        name: 'David Chen',
-        email: 'd.chen@datamigrationpro.com',
-        phone: '(555) 678-9012'
-      },
-      matchScore: 85,
-      status: 'approved',
-      compliance: {
-        loi: 'signed',
-        wdAlignment: 'compliant',
-        coi: 'active',
-        licenses: 'valid',
-        debarment: 'clear'
-      },
-      pricing: {
-        hourlyRate: 145,
-        overhead: 18,
-        profit: 12,
-        total: 191.40,
-        markup: 18
-      },
-      readiness: 95,
-      riskFactors: ['Higher cost', 'Limited availability'],
-      recommendations: ['Excellent technical capabilities', 'Proven track record']
-    }
-  ])
-
-  const [complianceChecks, setComplianceChecks] = useState<ComplianceCheck[]>([
-    {
-      id: 'check1',
-      requirement: 'Letter of Intent (LOI)',
-      status: 'pass',
-      details: 'Signed and notarized LOI received',
-      impact: 'high',
-      actionRequired: 'None - ready for proposal'
-    },
-    {
-      id: 'check2',
-      requirement: 'Wage Determination Alignment',
-      status: 'pass',
-      details: 'All labor categories match WD requirements',
-      impact: 'high',
-      actionRequired: 'None - compliant'
-    },
-    {
-      id: 'check3',
-      requirement: 'Certificate of Insurance (COI)',
-      status: 'warning',
-      details: 'COI expires in 30 days',
-      impact: 'medium',
-      actionRequired: 'Request updated COI before submission'
-    },
-    {
-      id: 'check4',
-      requirement: 'Required Licenses',
-      status: 'pass',
-      details: 'All required licenses verified and active',
-      impact: 'high',
-      actionRequired: 'None - compliant'
-    },
-    {
-      id: 'check5',
-      requirement: 'Debarment Check',
-      status: 'pass',
-      details: 'No debarment found in SAM.gov',
-      impact: 'high',
-      actionRequired: 'None - clear'
-    }
-  ])
-
+  // Pricing Estimator State
   const [pricingEstimates, setPricingEstimates] = useState<PricingEstimate[]>([
     {
-      role: 'Cloud Migration Lead',
+      role: 'HVAC Technician',
       hours: 1920,
-      rate: 125,
-      fringe: 25,
-      overhead: 15,
-      profit: 8,
-      total: 142.50,
+      rate: 85,
+      fringe: 25.5,
+      overhead: 42.5,
+      profit: 12.75,
+      total: 317520,
       wdCompliance: true
     },
     {
-      role: 'Security Specialist',
-      hours: 1440,
-      rate: 135,
-      fringe: 27,
-      overhead: 12,
-      profit: 10,
-      total: 166.20,
-      wdCompliance: true
-    },
-    {
-      role: 'Training Coordinator',
+      role: 'Controls Specialist',
       hours: 960,
       rate: 95,
-      fringe: 19,
-      overhead: 15,
-      profit: 8,
-      total: 115.50,
-      wdCompliance: false
+      fringe: 28.5,
+      overhead: 47.5,
+      profit: 14.25,
+      total: 177840,
+      wdCompliance: true
+    },
+    {
+      role: 'Helper',
+      hours: 1440,
+      rate: 45,
+      fringe: 13.5,
+      overhead: 22.5,
+      profit: 6.75,
+      total: 126720,
+      wdCompliance: true
     }
   ])
 
-  const selectedSub = subcontractors.find(sub => sub.id === selectedSubcontractor)
-
-  const overallCompliance = Math.round(
-    (complianceChecks.filter(check => check.status === 'pass').length / complianceChecks.length) * 100
-  )
-
-  // CRUD Functions
-  const handleAddSubcontractor = () => {
-    setFormData({
-      name: '',
-      type: '',
-      specialties: [],
-      location: '',
-      contactName: '',
-      contactEmail: '',
-      contactPhone: '',
-      certifications: [],
-      hourlyRate: 0,
-      overhead: 0,
-      profit: 0
-    })
-    setShowAddModal(true)
-  }
-
-  const handleEditSubcontractor = (subcontractor: Subcontractor) => {
-    setEditingSubcontractor(subcontractor)
-    setFormData({
-      name: subcontractor.name,
-      type: subcontractor.type,
-      specialties: subcontractor.specialties,
-      location: subcontractor.location,
-      contactName: subcontractor.contact.name,
-      contactEmail: subcontractor.contact.email,
-      contactPhone: subcontractor.contact.phone,
-      certifications: subcontractor.certifications,
-      hourlyRate: subcontractor.pricing.hourlyRate,
-      overhead: subcontractor.pricing.overhead,
-      profit: subcontractor.pricing.profit
-    })
-    setShowEditModal(true)
-  }
-
-  const handleDeleteSubcontractor = (subcontractor: Subcontractor) => {
-    setDeletingSubcontractor(subcontractor)
-    setShowDeleteModal(true)
-  }
-
-  const saveSubcontractor = () => {
-    if (editingSubcontractor) {
-      // Update existing subcontractor
-      setSubcontractors(prev => prev.map(sub => 
-        sub.id === editingSubcontractor.id 
-          ? {
-              ...sub,
-              name: formData.name,
-              type: formData.type,
-              specialties: formData.specialties,
-              location: formData.location,
-              contact: {
-                name: formData.contactName,
-                email: formData.contactEmail,
-                phone: formData.contactPhone
-              },
-              certifications: formData.certifications,
-              pricing: {
-                ...sub.pricing,
-                hourlyRate: formData.hourlyRate,
-                overhead: formData.overhead,
-                profit: formData.profit,
-                total: formData.hourlyRate * (1 + formData.overhead/100) * (1 + formData.profit/100),
-                markup: formData.overhead + formData.profit
-              }
-            }
-          : sub
-      ))
-      setShowEditModal(false)
-      setEditingSubcontractor(null)
-    } else {
-      // Add new subcontractor
-      const newSubcontractor: Subcontractor = {
-        id: `sub${Date.now()}`,
-        name: formData.name,
-        type: formData.type,
-        specialties: formData.specialties,
-        pastPerformance: 4.5,
-        priceCompetitiveness: 80,
-        availability: 'high' as const,
-        certifications: formData.certifications,
-        location: formData.location,
-        contact: {
-          name: formData.contactName,
-          email: formData.contactEmail,
-          phone: formData.contactPhone
-        },
-        matchScore: 85,
-        status: 'pending' as const,
-        compliance: {
-          loi: 'pending' as const,
-          wdAlignment: 'pending' as const,
-          coi: 'active' as const,
-          licenses: 'valid' as const,
-          debarment: 'clear' as const
-        },
-        pricing: {
-          hourlyRate: formData.hourlyRate,
-          overhead: formData.overhead,
-          profit: formData.profit,
-          total: formData.hourlyRate * (1 + formData.overhead/100) * (1 + formData.profit/100),
-          markup: formData.overhead + formData.profit
-        },
-        readiness: 70,
-        riskFactors: ['New subcontractor - needs evaluation'],
-        recommendations: ['Complete compliance check', 'Verify certifications']
-      }
-      setSubcontractors(prev => [...prev, newSubcontractor])
-      setShowAddModal(false)
-    }
-    setFormData({
-      name: '',
-      type: '',
-      specialties: [],
-      location: '',
-      contactName: '',
-      contactEmail: '',
-      contactPhone: '',
-      certifications: [],
-      hourlyRate: 0,
-      overhead: 0,
-      profit: 0
-    })
-  }
-
-  const confirmDelete = () => {
-    if (deletingSubcontractor) {
-      setSubcontractors(prev => prev.filter(sub => sub.id !== deletingSubcontractor.id))
-      setShowDeleteModal(false)
-      setDeletingSubcontractor(null)
-    }
-  }
-
-  const addSpecialty = (specialty: string) => {
-    if (specialty && !formData.specialties.includes(specialty)) {
-      setFormData(prev => ({
-        ...prev,
-        specialties: [...prev.specialties, specialty]
-      }))
-    }
-  }
-
-  const removeSpecialty = (specialty: string) => {
-    setFormData(prev => ({
-      ...prev,
-      specialties: prev.specialties.filter(s => s !== specialty)
-    }))
-  }
-
-  const addCertification = (certification: string) => {
-    if (certification && !formData.certifications.includes(certification)) {
-      setFormData(prev => ({
-        ...prev,
-        certifications: [...prev.certifications, certification]
-      }))
-    }
-  }
-
-  const removeCertification = (certification: string) => {
-    setFormData(prev => ({
-      ...prev,
-      certifications: prev.certifications.filter(c => c !== certification)
-    }))
-  }
-
   // Team Assembly Functions
-  const completeStep = (stepId: number) => {
-    setCompletedSteps(prev => [...prev, stepId])
-    setCurrentStep(stepId + 1)
-    setWorkflowProgress(((stepId + 1) / 4) * 100)
-  }
-
   const getStepStatus = (stepId: number) => {
-    if (completedSteps.includes(stepId)) return 'completed'
-    if (currentStep === stepId) return 'active'
+    if (!currentRFP) return 'pending'
+    if (currentRFP.completedSteps.includes(stepId)) return 'completed'
+    if (currentRFP.currentStep === stepId) return 'active'
     return 'pending'
   }
 
   const openStepModal = async (step: any) => {
-    setCurrentStepData(step)
-    setAiSuggestions(null)
-    setShowStepModal(true)
+    if (!currentRFP) return
+    
+    updateTeamAssemblyData(rfpId, {
+      currentStepData: step,
+      aiSuggestions: null,
+      showStepModal: true
+    })
+    
     await generateAISuggestions(step)
   }
 
@@ -866,72 +480,85 @@ export default function SubcontractorManagementPage() {
     const stepKey = `step${step.id}` as keyof typeof suggestions
     
     if (suggestions[stepKey]) {
-      setAiSuggestions(suggestions[stepKey])
+      updateTeamAssemblyData(rfpId, {
+        aiSuggestions: suggestions[stepKey]
+      })
     } else {
-      setAiSuggestions({
-        title: 'AI Recommendations',
-        suggestions: [
-          {
-            type: 'general',
-            title: 'Complete this step',
-            description: 'Proceed with the recommended actions for this step',
-            confidence: 85,
-            action: () => completeStep(step.id)
-          }
-        ],
-        autoProcess: false
+      updateTeamAssemblyData(rfpId, {
+        aiSuggestions: {
+          title: 'AI Recommendations',
+          suggestions: [
+            {
+              type: 'general',
+              title: 'Complete this step',
+              description: 'Proceed with the recommended actions for this step',
+              confidence: 85,
+              action: () => completeStep(rfpId, step.id)
+            }
+          ],
+          autoProcess: false
+        }
       })
     }
   }
 
   const handleAutoProcessing = async () => {
-    setAutoProcessing(true)
+    if (!teamAssemblyData?.aiSuggestions) return
     
-    if (aiSuggestions) {
-      for (const suggestion of aiSuggestions.suggestions) {
-        await suggestion.action()
-        await new Promise(resolve => setTimeout(resolve, 1000))
-      }
+    updateTeamAssemblyData(rfpId, { autoProcessing: true })
+    
+    for (const suggestion of teamAssemblyData.aiSuggestions.suggestions) {
+      await suggestion.action()
+      await new Promise(resolve => setTimeout(resolve, 1000))
     }
     
-    setAutoProcessing(false)
-    setShowStepModal(false)
-    completeStep(currentStep)
+    updateTeamAssemblyData(rfpId, { 
+      autoProcessing: false,
+      showStepModal: false
+    })
+    completeStep(rfpId, currentRFP?.currentStep || 1)
   }
 
   const handleReplaceMember = async (memberName: string) => {
-    setActionInProgress(true)
-    setSelectedAction('replacing-member')
+    updateTeamAssemblyData(rfpId, {
+      actionInProgress: true,
+      selectedAction: 'replacing-member'
+    })
     
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    setTeamMembers(prev => prev.map(member => 
+    // Update team member in store
+    const updatedTeamMembers = teamMembers.map(member => 
       member.name === memberName 
         ? { ...member, name: 'Sarah Mitchell', title: 'Safety Officer', badges: [...member.badges, 'OSHA Certified'] }
         : member
-    ))
+    )
     
-    setSpiritAnalysis(prev => ({
-      ...prev,
+    // Update spirit analysis
+    updateSpiritAnalysis(rfpId, {
       teamReadiness: 89,
       gaps: {
-        ...prev.gaps,
-        critical: prev.gaps.critical.filter(gap => !gap.includes('Safety Officer'))
+        ...spiritAnalysis?.gaps,
+        critical: spiritAnalysis?.gaps.critical.filter(gap => !gap.includes('Safety Officer')) || []
       }
-    }))
+    })
     
-    setActionInProgress(false)
-    setSelectedAction(null)
-    completeStep(1)
+    updateTeamAssemblyData(rfpId, {
+      actionInProgress: false,
+      selectedAction: null
+    })
+    completeStep(rfpId, 1)
   }
 
   const handleHireConstructionManager = async () => {
-    setActionInProgress(true)
-    setSelectedAction('hiring-manager')
+    updateTeamAssemblyData(rfpId, {
+      actionInProgress: true,
+      selectedAction: 'hiring-manager'
+    })
     
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    const newManager: TeamMember = {
+    const newManager = {
       id: '5',
       name: 'Alex Rodriguez',
       title: 'Construction Manager',
@@ -941,70 +568,82 @@ export default function SubcontractorManagementPage() {
       skills: ['Construction Management', 'Federal Projects', 'Safety'],
       experience: 12,
       clearance: 'Secret',
-      availability: 'available',
+      availability: 'available' as const,
       rate: 115,
       matchScore: 91,
-      status: 'assigned',
+      status: 'assigned' as const,
       avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
       badges: ['PMP', 'OSHA Certified']
     }
     
-    setTeamMembers(prev => [...prev, newManager])
-    setSpiritAnalysis(prev => ({
-      ...prev,
+    // Add to team members
+    const updatedTeamMembers = [...teamMembers, newManager]
+    
+    // Update spirit analysis
+    updateSpiritAnalysis(rfpId, {
       teamReadiness: 89,
       gaps: {
-        ...prev.gaps,
-        critical: prev.gaps.critical.filter(gap => !gap.includes('Construction Manager'))
+        ...spiritAnalysis?.gaps,
+        critical: spiritAnalysis?.gaps.critical.filter(gap => !gap.includes('Construction Manager')) || []
       }
-    }))
+    })
     
-    setActionInProgress(false)
-    setSelectedAction(null)
-    completeStep(1)
+    updateTeamAssemblyData(rfpId, {
+      actionInProgress: false,
+      selectedAction: null
+    })
+    completeStep(rfpId, 1)
   }
 
   const handleOptimizeTeam = async () => {
-    setActionInProgress(true)
-    setSelectedAction('optimizing-team')
+    updateTeamAssemblyData(rfpId, {
+      actionInProgress: true,
+      selectedAction: 'optimizing-team'
+    })
     
     await new Promise(resolve => setTimeout(resolve, 3000))
     
-    setSpiritAnalysis(prev => ({
-      ...prev,
+    updateSpiritAnalysis(rfpId, {
       teamReadiness: 94,
       automatedActions: {
-        ...prev.automatedActions,
-        completed: [...prev.automatedActions.completed, 'Team optimization completed']
+        ...spiritAnalysis?.automatedActions,
+        completed: [...(spiritAnalysis?.automatedActions.completed || []), 'Team optimization completed']
       }
-    }))
+    })
     
-    setActionInProgress(false)
-    setSelectedAction(null)
+    updateTeamAssemblyData(rfpId, {
+      actionInProgress: false,
+      selectedAction: null
+    })
   }
 
   const handleSendScope = async () => {
-    setActionInProgress(true)
-    setSelectedAction('sending-scope')
+    updateTeamAssemblyData(rfpId, {
+      actionInProgress: true,
+      selectedAction: 'sending-scope'
+    })
     
     await new Promise(resolve => setTimeout(resolve, 2000))
     
-    setSpiritAnalysis(prev => ({
-      ...prev,
+    updateSpiritAnalysis(rfpId, {
       automatedActions: {
-        ...prev.automatedActions,
-        completed: [...prev.automatedActions.completed, 'Scope sent to subcontractors']
+        ...spiritAnalysis?.automatedActions,
+        completed: [...(spiritAnalysis?.automatedActions.completed || []), 'Scope sent to subcontractors']
       }
-    }))
+    })
     
-    setActionInProgress(false)
-    setSelectedAction(null)
-    completeStep(2)
+    updateTeamAssemblyData(rfpId, {
+      actionInProgress: false,
+      selectedAction: null
+    })
+    completeStep(rfpId, 2)
   }
 
   const handleReviewScope = async () => {
-    setShowStepModal(false)
-    setShowScopeModal(true)
+    updateTeamAssemblyData(rfpId, {
+      showStepModal: false,
+      showScopeModal: true
+    })
   }
 
   const workflowSteps = [
@@ -1033,599 +672,6 @@ export default function SubcontractorManagementPage() {
       status: 'pending'
     }
   ]
-
-  // Additional Team Assembly Functions from Original Page
-  const startTeamAnalysis = async () => {
-    setSpiritAnalysis(prev => ({
-      ...prev,
-      isProcessing: true,
-      progress: 0,
-      currentPhase: 'Initializing team analysis...'
-    }))
-
-    const phases = [
-      'Analyzing team composition...',
-      'Evaluating subcontractor capabilities...',
-      'Identifying critical gaps...',
-      'Generating recommendations...',
-      'Finalizing analysis...'
-    ]
-
-    for (let i = 0; i < phases.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setSpiritAnalysis(prev => ({
-        ...prev,
-        progress: ((i + 1) / phases.length) * 100,
-        currentPhase: phases[i]
-      }))
-    }
-
-    setSpiritAnalysis(prev => ({
-      ...prev,
-      isProcessing: false,
-      teamReadiness: 82,
-      gaps: {
-        critical: ['Safety Officer certification expired', 'Construction Manager role unfilled'],
-        high: ['Backup personnel needed for critical roles'],
-        medium: ['Team workload distribution optimization']
-      },
-      recommendations: {
-        internal: ['Replace Thomas with qualified OSHA-certified personnel', 'Assign backup for Project Manager role'],
-        subcontractor: ['Hire construction manager through subcontractor', 'Request updated certifications'],
-        strategic: ['Optimize team composition for 89% readiness', 'Balance workload across team members']
-      },
-      automatedActions: {
-        completed: ['Team composition analysis', 'Gap identification'],
-        inProgress: ['Compliance verification'],
-        pending: ['Team optimization', 'Final approval']
-      }
-    }))
-  }
-
-  const askSpirit = async () => {
-    if (!userQuestion.trim()) return
-    
-    setIsAskingSpirit(true)
-    
-    // Simulate AI response
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    setIsAskingSpirit(false)
-    setUserQuestion('')
-  }
-
-  const runScenarioSimulation = async (scenarioKey: string) => {
-    setIsSimulating(true)
-    setCurrentScenario(scenarioKey)
-    
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    
-    const results = {
-      'conservative': {
-        winProbability: 65,
-        totalCost: 2850000,
-        timeline: '18 months',
-        risks: ['Budget overruns', 'Timeline delays'],
-        recommendations: ['Increase contingency budget', 'Add backup personnel']
-      },
-      'aggressive': {
-        winProbability: 85,
-        totalCost: 3200000,
-        timeline: '15 months',
-        risks: ['Resource constraints', 'Quality issues'],
-        recommendations: ['Optimize team composition', 'Enhance quality controls']
-      },
-      'premium': {
-        winProbability: 75,
-        totalCost: 3800000,
-        timeline: '20 months',
-        risks: ['Cost overruns', 'Scope creep'],
-        recommendations: ['Strict scope management', 'Enhanced monitoring']
-      }
-    }
-    
-    setScenarioResults(results[scenarioKey as keyof typeof results])
-    setIsSimulating(false)
-  }
-
-  const applyScenario = async () => {
-    if (!scenarioResults) return
-    
-    setSpiritAnalysis(prev => ({
-      ...prev,
-      teamReadiness: prev.teamReadiness + 5,
-      automatedActions: {
-        ...prev.automatedActions,
-        completed: [...prev.automatedActions.completed, 'Scenario applied']
-      }
-    }))
-    
-    setShowScenarioSimulator(false)
-    setScenarioResults(null)
-  }
-
-  const sendScopeToSubcontractors = async () => {
-    setActionInProgress(true)
-    setSelectedAction('sending-scope')
-    
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    setSpiritAnalysis(prev => ({
-      ...prev,
-      automatedActions: {
-        ...prev.automatedActions,
-        completed: [...prev.automatedActions.completed, 'Scope sent to subcontractors']
-      }
-    }))
-    
-    setActionInProgress(false)
-    setSelectedAction(null)
-    setShowScopeModal(false)
-  }
-
-  const handleFindCandidates = async (type: 'safety-officer' | 'construction-manager') => {
-    setCandidateType(type)
-    setShowCandidateModal(true)
-    
-    // Simulate finding candidates
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    const candidates = type === 'safety-officer' ? [
-      {
-        id: '1',
-        name: 'Sarah Mitchell',
-        title: 'Safety Officer',
-        experience: 8,
-        certifications: ['OSHA 30', 'First Aid', 'CPR'],
-        availability: 'Immediate',
-        rate: 95,
-        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
-      },
-      {
-        id: '2',
-        name: 'David Thompson',
-        title: 'Safety Specialist',
-        experience: 12,
-        certifications: ['OSHA 30', 'Safety Management', 'Hazard Analysis'],
-        availability: '2 weeks',
-        rate: 110,
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
-      }
-    ] : [
-      {
-        id: '3',
-        name: 'Alex Rodriguez',
-        title: 'Construction Manager',
-        experience: 15,
-        certifications: ['PMP', 'OSHA 30', 'Construction Management'],
-        availability: 'Immediate',
-        rate: 115,
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
-      },
-      {
-        id: '4',
-        name: 'Maria Garcia',
-        title: 'Project Manager',
-        experience: 10,
-        certifications: ['PMP', 'Construction Safety', 'Quality Management'],
-        availability: '1 week',
-        rate: 105,
-        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
-      }
-    ]
-    
-    setAvailableCandidates(candidates)
-  }
-
-  const handleSelectCandidate = async (candidate: any) => {
-    setSelectedCandidates(prev => ({
-      ...prev,
-      [candidateType!]: candidate
-    }))
-    
-    setSatisfactionStates(prev => ({
-      ...prev,
-      [candidateType!]: 'satisfied'
-    }))
-    
-    // Add candidate to team
-    if (candidateType === 'safety-officer') {
-      setTeamMembers(prev => prev.map(member => 
-        member.name === 'Thomas' 
-          ? { ...member, name: candidate.name, title: candidate.title, badges: [...member.badges, 'OSHA Certified'] }
-          : member
-      ))
-    } else if (candidateType === 'construction-manager') {
-      const newManager: TeamMember = {
-        id: '5',
-        name: candidate.name,
-        title: candidate.title,
-        email: `${candidate.name.toLowerCase().replace(' ', '.')}@company.com`,
-        phone: '(555) 567-8901',
-        location: 'Washington, DC',
-        skills: ['Construction Management', 'Federal Projects', 'Safety'],
-        experience: candidate.experience,
-        clearance: 'Secret',
-        availability: 'available',
-        rate: candidate.rate,
-        matchScore: 91,
-        status: 'assigned',
-        avatar: candidate.avatar,
-        badges: ['PMP', 'OSHA Certified']
-      }
-      setTeamMembers(prev => [...prev, newManager])
-    }
-    
-    setShowCandidateModal(false)
-    setCandidateType(null)
-  }
-
-  const handleConfirmSelections = async () => {
-    setSpiritAnalysis(prev => ({
-      ...prev,
-      teamReadiness: 89,
-      gaps: {
-        ...prev.gaps,
-        critical: []
-      }
-    }))
-    
-    completeStep(1)
-  }
-
-  const handleModifySelection = (type: 'safety-officer' | 'construction-manager') => {
-    setSatisfactionStates(prev => ({
-      ...prev,
-      [type]: 'modifying'
-    }))
-    
-    handleFindCandidates(type)
-  }
-
-  const handleRemoveSelection = (type: 'safety-officer' | 'construction-manager') => {
-    setSelectedCandidates(prev => ({
-      ...prev,
-      [type]: null
-    }))
-    
-    setSatisfactionStates(prev => ({
-      ...prev,
-      [type]: 'pending'
-    }))
-  }
-
-  // Team Assembly State Variables
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      title: 'Senior Cloud Architect',
-      email: 'sarah.johnson@company.com',
-      phone: '(555) 123-4567',
-      location: 'Washington, DC',
-      skills: ['AWS', 'Azure', 'Cloud Migration', 'DevOps', 'Security'],
-      experience: 8,
-      clearance: 'Secret',
-      availability: 'available',
-      rate: 125,
-      matchScore: 95,
-      status: 'assigned',
-      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face',
-      badges: ['Project Manager', 'SECRET Clearance']
-    },
-    {
-      id: '2',
-      name: 'Michael Chen',
-      title: 'Security Engineer',
-      email: 'michael.chen@company.com',
-      phone: '(555) 234-5678',
-      location: 'Arlington, VA',
-      skills: ['FISMA', 'FedRAMP', 'Security Controls', 'Compliance'],
-      experience: 6,
-      clearance: 'Top Secret',
-      availability: 'available',
-      rate: 110,
-      matchScore: 88,
-      status: 'assigned',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      badges: ['Security Lead']
-    },
-    {
-      id: '3',
-      name: 'Jennifer Davis',
-      title: 'Project Manager',
-      email: 'jennifer.davis@company.com',
-      phone: '(555) 345-6789',
-      location: 'Alexandria, VA',
-      skills: ['PMP', 'Agile', 'Federal Contracts', 'Risk Management'],
-      experience: 10,
-      clearance: 'Secret',
-      availability: 'partially',
-      rate: 95,
-      matchScore: 92,
-      status: 'assigned',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      badges: ['PMP Certified', 'Agile Lead']
-    },
-    {
-      id: '4',
-      name: 'James Wilson',
-      title: 'Proposal Writer',
-      email: 'james.wilson@company.com',
-      phone: '(555) 456-7890',
-      location: 'Reston, VA',
-      skills: ['Technical Writing', 'Federal Proposals', 'Compliance'],
-      experience: 7,
-      clearance: 'Public Trust',
-      availability: 'available',
-      rate: 85,
-      matchScore: 89,
-      status: 'assigned',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      badges: ['Technical Writer']
-    }
-  ])
-
-  const [teamAssemblySubcontractors, setTeamAssemblySubcontractors] = useState<TeamAssemblySubcontractor[]>([
-    {
-      id: 'sub1',
-      name: 'Gun HVAC',
-      type: 'HVAC Contractor',
-      specialties: ['HVAC Installation', 'System Maintenance', 'Controls'],
-      pastPerformance: 4.8,
-      priceCompetitiveness: 85,
-      availability: 'high',
-      certifications: ['NAICS 238220', 'Licensed HVAC'],
-      location: 'Reston, VA',
-      contact: {
-        name: 'Paul Johnson',
-        email: 'p.johnson@gunhvac.com',
-        phone: '(555) 456-7890'
-      },
-      matchScore: 87,
-      status: 'approved',
-      bidStatus: 'approved',
-      assignedWork: {
-        scopeItems: ['HVAC System Removal', 'New HVAC Installation', 'Controls Integration'],
-        estimatedValue: 450000,
-        timeline: '8 weeks',
-        requirements: ['OSHA 10 certification', 'HVAC license', 'EPA certification']
-      },
-      pricing: {
-        proposedAmount: 450000,
-        laborRates: { 'HVAC Technician': 85, 'Controls Specialist': 95, 'Helper': 45 },
-        materials: 280000,
-        overhead: 45000,
-        profit: 80000
-      },
-      compliance: {
-        insurance: true,
-        bonding: true,
-        certifications: ['OSHA 10', 'HVAC License', 'EPA 608'],
-        clearances: ['Public Trust']
-      },
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      logo: 'GUNN',
-      teamMembers: [
-        {
-          name: 'Paul',
-          role: 'HVAC Technician',
-          avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=150&h=150&fit=crop&crop=face',
-          status: 'approved'
-        },
-        {
-          name: 'Thomas',
-          role: 'Safety Officer',
-          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-          status: 'needs-review'
-        }
-      ]
-    },
-    {
-      id: 'sub2',
-      name: 'Bregman Electric',
-      type: 'Electrical Contractor',
-      specialties: ['Electrical Installation', 'Wiring', 'Controls'],
-      pastPerformance: 4.6,
-      priceCompetitiveness: 78,
-      availability: 'medium',
-      certifications: ['NAICS 238210', 'Licensed Electrician'],
-      location: 'Bethesda, MD',
-      contact: {
-        name: 'Lisa Rodriguez',
-        email: 'l.rodriguez@bregmanelectric.com',
-        phone: '(555) 567-8901'
-      },
-      matchScore: 82,
-      status: 'selected',
-      bidStatus: 'submitted',
-      assignedWork: {
-        scopeItems: ['Electrical Integration', 'Panel Upgrades', 'Wiring Installation'],
-        estimatedValue: 280000,
-        timeline: '6 weeks',
-        requirements: ['Electrical license', 'NEC knowledge', 'Safety training']
-      },
-      pricing: {
-        proposedAmount: 280000,
-        laborRates: { 'Electrician': 75, 'Journeyman': 65, 'Helper': 40 },
-        materials: 180000,
-        overhead: 28000,
-        profit: 52000
-      },
-      compliance: {
-        insurance: true,
-        bonding: true,
-        certifications: ['Electrical License', 'NEC Training'],
-        clearances: ['Public Trust']
-      },
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-      logo: '⚡',
-      teamMembers: [
-        {
-          name: 'Natalie',
-          role: 'Electrician',
-          avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face',
-          status: 'pending'
-        },
-        {
-          name: 'Jacob',
-          role: 'Journeyman',
-          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
-          status: 'approved'
-        }
-      ]
-    },
-    {
-      id: 'sub3',
-      name: 'Carroll Plumbing',
-      type: 'Plumbing Contractor',
-      specialties: ['Plumbing Installation', 'Pipe Systems', 'Fixtures'],
-      pastPerformance: 4.7,
-      priceCompetitiveness: 82,
-      availability: 'high',
-      certifications: ['NAICS 238220', 'Licensed Plumber'],
-      location: 'Arlington, VA',
-      contact: {
-        name: 'David Chen',
-        email: 'd.chen@carrollplumbing.com',
-        phone: '(555) 678-9012'
-      },
-      matchScore: 85,
-      status: 'contracted',
-      bidStatus: 'approved',
-      assignedWork: {
-        scopeItems: ['Plumbing Integration', 'Condensate Lines', 'Water Connections'],
-        estimatedValue: 180000,
-        timeline: '4 weeks',
-        requirements: ['Plumbing license', 'Local code knowledge', 'Safety training']
-      },
-      pricing: {
-        proposedAmount: 180000,
-        laborRates: { 'Plumber': 70, 'Helper': 35 },
-        materials: 120000,
-        overhead: 18000,
-        profit: 32000
-      },
-      compliance: {
-        insurance: true,
-        bonding: true,
-        certifications: ['Plumbing License', 'Local Code Training'],
-        clearances: ['Public Trust']
-      },
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      logo: 'C',
-      teamMembers: [
-        {
-          name: 'Matthew',
-          role: 'Plumber',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-          status: 'approved'
-        },
-        {
-          name: 'Olivia',
-          role: 'Plumbing Helper',
-          avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-          status: 'approved'
-        }
-      ]
-    }
-  ])
-
-  const [roleRequirements, setRoleRequirements] = useState<RoleRequirement[]>([
-    {
-      id: 'role1',
-      title: 'Cloud Migration Lead',
-      description: 'Lead the migration of legacy systems to cloud infrastructure',
-      requiredSkills: ['AWS/Azure', 'Cloud Migration', 'DevOps'],
-      experience: 7,
-      clearance: 'Secret',
-      hours: 1920,
-      priority: 'critical',
-      status: 'filled',
-      assignedTo: '1'
-    },
-    {
-      id: 'role2',
-      title: 'Security Compliance Specialist',
-      description: 'Ensure FedRAMP and FISMA compliance throughout the project',
-      requiredSkills: ['FedRAMP', 'FISMA', 'Security Controls'],
-      experience: 5,
-      clearance: 'Top Secret',
-      hours: 1440,
-      priority: 'critical',
-      status: 'filled',
-      assignedTo: '2'
-    },
-    {
-      id: 'role3',
-      title: 'Project Manager',
-      description: 'Manage project timeline, budget, and stakeholder communications',
-      requiredSkills: ['PMP', 'Federal Contracts', 'Risk Management'],
-      experience: 8,
-      clearance: 'Secret',
-      hours: 1920,
-      priority: 'high',
-      status: 'filled',
-      assignedTo: '3'
-    },
-    {
-      id: 'role4',
-      title: 'Training Coordinator',
-      description: 'Develop and deliver training materials for end users',
-      requiredSkills: ['Training Development', 'Change Management', 'VA Systems'],
-      experience: 4,
-      clearance: 'Public Trust',
-      hours: 960,
-      priority: 'medium',
-      status: 'gap'
-    }
-  ])
-
-  const [spiritAnalysis, setSpiritAnalysis] = useState<SpiritTeamAnalysis>({
-    isProcessing: false,
-    progress: 0,
-    currentPhase: '',
-    teamReadiness: 0,
-    gaps: { critical: [], high: [], medium: [] },
-    recommendations: { internal: [], subcontractor: [], strategic: [] },
-    automatedActions: { completed: [], inProgress: [], pending: [] }
-  })
-
-  const [userQuestion, setUserQuestion] = useState('')
-  const [isAskingSpirit, setIsAskingSpirit] = useState(false)
-
-  // Team Assembly Workflow State
-  const [currentStep, setCurrentStep] = useState(1)
-  const [completedSteps, setCompletedSteps] = useState<number[]>([])
-  const [workflowProgress, setWorkflowProgress] = useState(25)
-  const [showStepModal, setShowStepModal] = useState(false)
-  const [currentStepData, setCurrentStepData] = useState<any>(null)
-  const [aiSuggestions, setAiSuggestions] = useState<any>(null)
-  const [autoProcessing, setAutoProcessing] = useState(false)
-  const [actionInProgress, setActionInProgress] = useState(false)
-  const [selectedAction, setSelectedAction] = useState<string | null>(null)
-
-  // Candidate Selection State
-  const [showCandidateModal, setShowCandidateModal] = useState(false)
-  const [candidateType, setCandidateType] = useState<'safety-officer' | 'construction-manager' | null>(null)
-  const [availableCandidates, setAvailableCandidates] = useState<any[]>([])
-  const [selectedCandidates, setSelectedCandidates] = useState<Record<string, any>>({})
-  const [satisfactionStates, setSatisfactionStates] = useState<Record<string, 'pending' | 'satisfied' | 'modifying'>>({
-    'safety-officer': 'pending',
-    'construction-manager': 'pending'
-  })
-
-  // Scenario Simulator State
-  const [showScenarioSimulator, setShowScenarioSimulator] = useState(false)
-  const [currentScenario, setCurrentScenario] = useState<string | null>(null)
-  const [scenarioResults, setScenarioResults] = useState<any>(null)
-  const [isSimulating, setIsSimulating] = useState(false)
-
-  // Scope Review State
-  const [showScopeModal, setShowScopeModal] = useState(false)
-  const [scopeData, setScopeData] = useState<any>(null)
-  const [selectedSubcontractors, setSelectedSubcontractors] = useState<string[]>([])
-  const [scopeApproved, setScopeApproved] = useState(false)
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
@@ -2831,7 +1877,7 @@ export default function SubcontractorManagementPage() {
 
       {/* Team Assembly Step Modal */}
       <AnimatePresence>
-        {showStepModal && currentStepData && (
+        {teamAssemblyData?.showStepModal && teamAssemblyData.currentStepData && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -2848,13 +1894,13 @@ export default function SubcontractorManagementPage() {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold">Step {currentStepData.id}: {currentStepData.title}</h2>
-                    <p className="text-blue-100">{currentStepData.description}</p>
+                    <h2 className="text-2xl font-bold">Step {teamAssemblyData.currentStepData.id}: {teamAssemblyData.currentStepData.title}</h2>
+                    <p className="text-blue-100">{teamAssemblyData.currentStepData.description}</p>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setShowStepModal(false)}
+                    onClick={() => updateTeamAssemblyData(rfpId, { showStepModal: false })}
                     className="text-white hover:bg-white/20"
                   >
                     <X className="h-5 w-5" />
@@ -2871,7 +1917,7 @@ export default function SubcontractorManagementPage() {
                       Spirit AI Recommendations
                     </h3>
                     
-                    {!aiSuggestions ? (
+                    {!teamAssemblyData.aiSuggestions ? (
                       <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                         <div className="flex items-center">
                           <Loader2 className="h-4 w-4 animate-spin text-purple-600 mr-2" />
@@ -2880,7 +1926,7 @@ export default function SubcontractorManagementPage() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {aiSuggestions.suggestions.map((suggestion: any, index: number) => (
+                        {teamAssemblyData.aiSuggestions.suggestions.map((suggestion: any, index: number) => (
                           <div key={index} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
                             <div className="flex items-center justify-between mb-2">
                               <h4 className="font-semibold text-gray-900">{suggestion.title}</h4>
@@ -2910,7 +1956,7 @@ export default function SubcontractorManagementPage() {
                           </div>
                         ))}
                         
-                        {aiSuggestions.autoProcess && (
+                        {teamAssemblyData.aiSuggestions.autoProcess && (
                           <Button 
                             className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
                             onClick={handleAutoProcessing}
@@ -2941,7 +1987,7 @@ export default function SubcontractorManagementPage() {
                     </h3>
                     
                     <div className="space-y-4">
-                      {currentStepData.id === 1 && (
+                      {teamAssemblyData.currentStepData.id === 1 && (
                         <div className="space-y-4">
                           {/* Safety Officer Options */}
                           <div className={`p-4 rounded-xl border transition-all duration-300 ${
@@ -3063,7 +2109,7 @@ export default function SubcontractorManagementPage() {
                         </div>
                       )}
 
-                      {currentStepData.id === 2 && (
+                      {teamAssemblyData.currentStepData.id === 2 && (
                         <div className="space-y-4">
                           <div className="p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl border border-blue-200">
                             <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
@@ -3118,7 +2164,7 @@ export default function SubcontractorManagementPage() {
                         </div>
                       )}
 
-                      {currentStepData.id === 3 && (
+                      {teamAssemblyData.currentStepData.id === 3 && (
                         <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
                           <h4 className="font-semibold text-green-900 mb-3 flex items-center">
                             <TrendingUp className="h-4 w-4 mr-2" />
@@ -3164,7 +2210,7 @@ export default function SubcontractorManagementPage() {
                         </div>
                       )}
 
-                      {currentStepData.id === 4 && (
+                      {teamAssemblyData.currentStepData.id === 4 && (
                         <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
                           <h4 className="font-semibold text-green-900 mb-3 flex items-center">
                             <CheckCircle className="h-4 w-4 mr-2" />
