@@ -106,44 +106,8 @@ import {
   BarChart3
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useBidStore } from '@/app/shared/stores/useBidStore'
+import { useBidStore, Subcontractor } from '@/app/shared/stores/useBidStore'
 import { useSearchParams } from 'next/navigation'
-
-interface Subcontractor {
-  id: string
-  name: string
-  type: string
-  specialties: string[]
-  pastPerformance: number
-  priceCompetitiveness: number
-  availability: 'high' | 'medium' | 'low'
-  certifications: string[]
-  location: string
-  contact: {
-    name: string
-    email: string
-    phone: string
-  }
-  matchScore: number
-  status: 'selected' | 'evaluating' | 'rejected' | 'approved' | 'pending'
-  compliance: {
-    loi: 'signed' | 'pending' | 'missing'
-    wdAlignment: 'compliant' | 'pending' | 'non-compliant'
-    coi: 'active' | 'expired' | 'missing'
-    licenses: 'valid' | 'expired' | 'missing'
-    debarment: 'clear' | 'pending' | 'flagged'
-  }
-  pricing: {
-    hourlyRate: number
-    overhead: number
-    profit: number
-    total: number
-    markup: number
-  }
-  readiness: number
-  riskFactors: string[]
-  recommendations: string[]
-}
 
 interface ComplianceCheck {
   id: string
@@ -165,7 +129,6 @@ interface PricingEstimate {
   wdCompliance: boolean
 }
 
-// Team Assembly Interfaces
 interface TeamMember {
   id: string
   name: string
@@ -219,7 +182,6 @@ interface SpiritTeamAnalysis {
   }
 }
 
-// Team Assembly Specific Interfaces
 interface TeamAssemblySubcontractor {
   id: string
   name: string
@@ -673,6 +635,183 @@ export default function SubcontractorManagementPage() {
     }
   ]
 
+  // Calculate overall compliance from subcontractor data
+  const overallCompliance = subcontractors.length > 0 
+    ? Math.round(
+        (subcontractors.filter(sub => 
+          sub.compliance.insurance && 
+          sub.compliance.bonding && 
+          sub.compliance.certifications.length > 0
+        ).length / subcontractors.length) * 100
+      )
+    : 0
+
+  // CRUD Functions
+  const handleAddSubcontractor = () => {
+    setFormData({
+      name: '',
+      type: '',
+      specialties: [],
+      location: '',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      certifications: [],
+      hourlyRate: 0,
+      overhead: 0,
+      profit: 0
+    })
+    setShowAddModal(true)
+  }
+
+  const handleEditSubcontractor = (subcontractor: any) => {
+    setEditingSubcontractor(subcontractor)
+    setFormData({
+      name: subcontractor.name,
+      type: subcontractor.type,
+      specialties: subcontractor.specialties,
+      location: subcontractor.location,
+      contactName: subcontractor.contact.name,
+      contactEmail: subcontractor.contact.email,
+      contactPhone: subcontractor.contact.phone,
+      certifications: subcontractor.certifications,
+      hourlyRate: subcontractor.pricing.proposedAmount / 1920, // Estimate hourly rate
+      overhead: subcontractor.pricing.overhead,
+      profit: subcontractor.pricing.profit
+    })
+    setShowEditModal(true)
+  }
+
+  const handleDeleteSubcontractor = (subcontractor: any) => {
+    setDeletingSubcontractor(subcontractor)
+    setShowDeleteModal(true)
+  }
+
+  const saveSubcontractor = () => {
+    if (editingSubcontractor) {
+      // Update existing subcontractor
+      updateSubcontractor(rfpId, editingSubcontractor.id, {
+        name: formData.name,
+        type: formData.type,
+        specialties: formData.specialties,
+        location: formData.location,
+        contact: {
+          name: formData.contactName,
+          email: formData.contactEmail,
+          phone: formData.contactPhone
+        },
+        certifications: formData.certifications,
+        pricing: {
+          proposedAmount: formData.hourlyRate * 1920,
+          laborRates: { 'Default': formData.hourlyRate },
+          materials: 0,
+          overhead: formData.overhead,
+          profit: formData.profit
+        }
+      })
+      setShowEditModal(false)
+      setEditingSubcontractor(null)
+    } else {
+      // Add new subcontractor
+      const newSubcontractor = {
+        id: `sub${Date.now()}`,
+        name: formData.name,
+        type: formData.type,
+        specialties: formData.specialties,
+        pastPerformance: 4.5,
+        priceCompetitiveness: 80,
+        availability: 'high' as const,
+        certifications: formData.certifications,
+        location: formData.location,
+        contact: {
+          name: formData.contactName,
+          email: formData.contactEmail,
+          phone: formData.contactPhone
+        },
+        matchScore: 85,
+        status: 'evaluating' as const,
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+        logo: 'NEW',
+        bidStatus: 'pending' as const,
+        assignedWork: {
+          scopeItems: [],
+          estimatedValue: 0,
+          timeline: '',
+          requirements: []
+        },
+        pricing: {
+          proposedAmount: formData.hourlyRate * 1920,
+          laborRates: { 'Default': formData.hourlyRate },
+          materials: 0,
+          overhead: formData.overhead,
+          profit: formData.profit
+        },
+        compliance: {
+          insurance: true,
+          bonding: true,
+          certifications: formData.certifications,
+          clearances: []
+        },
+        teamMembers: []
+      }
+      addSubcontractor(rfpId, newSubcontractor)
+      setShowAddModal(false)
+    }
+    setFormData({
+      name: '',
+      type: '',
+      specialties: [],
+      location: '',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      certifications: [],
+      hourlyRate: 0,
+      overhead: 0,
+      profit: 0
+    })
+  }
+
+  const confirmDelete = () => {
+    if (deletingSubcontractor) {
+      removeSubcontractor(rfpId, deletingSubcontractor.id)
+      setShowDeleteModal(false)
+      setDeletingSubcontractor(null)
+    }
+  }
+
+  const addSpecialty = (specialty: string) => {
+    if (specialty && !formData.specialties.includes(specialty)) {
+      setFormData(prev => ({
+        ...prev,
+        specialties: [...prev.specialties, specialty]
+      }))
+    }
+  }
+
+  const removeSpecialty = (specialty: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specialties: prev.specialties.filter(s => s !== specialty)
+    }))
+  }
+
+  const addCertification = (certification: string) => {
+    if (certification && !formData.certifications.includes(certification)) {
+      setFormData(prev => ({
+        ...prev,
+        certifications: [...prev.certifications, certification]
+      }))
+    }
+  }
+
+  const removeCertification = (certification: string) => {
+    setFormData(prev => ({
+      ...prev,
+      certifications: prev.certifications.filter(c => c !== certification)
+    }))
+  }
+
   const renderOverviewTab = () => (
     <div className="space-y-6">
       {/* Compliance Check Summary */}
@@ -725,10 +864,10 @@ export default function SubcontractorManagementPage() {
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 font-medium text-gray-700">Subcontractor</th>
-                <th className="text-left py-3 font-medium text-gray-700">LOI</th>
-                <th className="text-left py-3 font-medium text-gray-700">WD Alignment</th>
-                <th className="text-left py-3 font-medium text-gray-700">COI</th>
-                <th className="text-left py-3 font-medium text-gray-700">Licenses</th>
+                <th className="text-left py-3 font-medium text-gray-700">Insurance</th>
+                <th className="text-left py-3 font-medium text-gray-700">Bonding</th>
+                <th className="text-left py-3 font-medium text-gray-700">Certifications</th>
+                <th className="text-left py-3 font-medium text-gray-700">Clearances</th>
                 <th className="text-left py-3 font-medium text-gray-700">Status</th>
                 <th className="text-left py-3 font-medium text-gray-700">Actions</th>
               </tr>
@@ -744,41 +883,37 @@ export default function SubcontractorManagementPage() {
                   </td>
                   <td className="py-3">
                     <div className="flex items-center">
-                      {sub.compliance.loi === 'signed' && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
-                      {sub.compliance.loi === 'pending' && <AlertTriangle className="h-4 w-4 text-yellow-600 mr-1" />}
-                      {sub.compliance.loi === 'missing' && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
-                      <span className="text-sm capitalize">{sub.compliance.loi}</span>
+                      {sub.compliance.insurance && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
+                      {!sub.compliance.insurance && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
+                      <span className="text-sm capitalize">{sub.compliance.insurance ? 'Active' : 'Missing'}</span>
                     </div>
                   </td>
                   <td className="py-3">
                     <div className="flex items-center">
-                      {sub.compliance.wdAlignment === 'compliant' && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
-                      {sub.compliance.wdAlignment === 'pending' && <AlertTriangle className="h-4 w-4 text-yellow-600 mr-1" />}
-                      {sub.compliance.wdAlignment === 'non-compliant' && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
-                      <span className="text-sm capitalize">{sub.compliance.wdAlignment}</span>
+                      {sub.compliance.bonding && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
+                      {!sub.compliance.bonding && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
+                      <span className="text-sm capitalize">{sub.compliance.bonding ? 'Active' : 'Missing'}</span>
                     </div>
                   </td>
                   <td className="py-3">
                     <div className="flex items-center">
-                      {sub.compliance.coi === 'active' && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
-                      {sub.compliance.coi === 'expired' && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
-                      {sub.compliance.coi === 'missing' && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
-                      <span className="text-sm capitalize">{sub.compliance.coi}</span>
+                      {sub.compliance.certifications.length > 0 && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
+                      {sub.compliance.certifications.length === 0 && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
+                      <span className="text-sm capitalize">{sub.compliance.certifications.length > 0 ? `${sub.compliance.certifications.length} Active` : 'None'}</span>
                     </div>
                   </td>
                   <td className="py-3">
                     <div className="flex items-center">
-                      {sub.compliance.licenses === 'valid' && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
-                      {sub.compliance.licenses === 'expired' && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
-                      {sub.compliance.licenses === 'missing' && <XCircle className="h-4 w-4 text-red-600 mr-1" />}
-                      <span className="text-sm capitalize">{sub.compliance.licenses}</span>
+                      {sub.compliance.clearances.length > 0 && <CheckCircle className="h-4 w-4 text-green-600 mr-1" />}
+                      {sub.compliance.clearances.length === 0 && <AlertTriangle className="h-4 w-4 text-yellow-600 mr-1" />}
+                      <span className="text-sm capitalize">{sub.compliance.clearances.length > 0 ? `${sub.compliance.clearances.length} Active` : 'None'}</span>
                     </div>
                   </td>
                   <td className="py-3">
                     <Badge className={
                       sub.status === 'approved' ? 'bg-green-100 text-green-800' :
                       sub.status === 'evaluating' ? 'bg-blue-100 text-blue-800' :
-                      sub.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      sub.status === 'evaluating' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }>
                       {sub.status}
@@ -808,7 +943,7 @@ export default function SubcontractorManagementPage() {
                         <X className="h-3 w-3 mr-1" />
                         Delete
                       </Button>
-                      {sub.status === 'pending' && (
+                      {sub.status === 'evaluating' && (
                         <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700">
                           Request Update
                         </Button>
