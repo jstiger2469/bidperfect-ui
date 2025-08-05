@@ -405,6 +405,16 @@ function ProgressCard({ title, percentage, color }: { title: string; percentage:
 export default function RFPWorkspacePage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
+  const [journeyProgress, setJourneyProgress] = useState({
+    overview: { completed: true, dataReady: true },
+    evaluation: { completed: false, dataReady: false },
+    instructions: { completed: false, dataReady: false },
+    pws: { completed: false, dataReady: false },
+    team: { completed: false, dataReady: false },
+    subcontractors: { completed: false, dataReady: false },
+    pricing: { completed: false, dataReady: false },
+    proposal: { completed: false, dataReady: false }
+  })
 
   const filteredTasks = workspace.tasks.filter(task =>
     task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -416,6 +426,24 @@ export default function RFPWorkspacePage() {
   )
 
   const daysUntilDue = Math.ceil((new Date(workspace.dueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+
+  const getStepStatus = (step: string) => {
+    return journeyProgress[step as keyof typeof journeyProgress]
+  }
+
+  const getOverallProgress = () => {
+    const completedSteps = Object.values(journeyProgress).filter(step => step.completed).length
+    return Math.round((completedSteps / 8) * 100)
+  }
+
+  const canAccessStep = (step: string) => {
+    const stepOrder = ['overview', 'evaluation', 'instructions', 'pws', 'team', 'subcontractors', 'pricing', 'proposal']
+    const currentIndex = stepOrder.indexOf(step)
+    if (currentIndex === 0) return true
+    
+    const previousStep = stepOrder[currentIndex - 1]
+    return journeyProgress[previousStep as keyof typeof journeyProgress].completed
+  }
 
   return (
     <div className="gradient-bg-primary min-h-screen">
@@ -441,6 +469,70 @@ export default function RFPWorkspacePage() {
             </Button>
           </div>
         </div>
+
+        {/* Guided Journey Progress */}
+        <Card className="card-premium p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Guided Journey Progress</h3>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-blue-600">{getOverallProgress()}%</div>
+              <div className="text-sm text-gray-600">Complete</div>
+            </div>
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500"
+              style={{ width: `${getOverallProgress()}%` }}
+            ></div>
+          </div>
+
+          {/* Step Indicators */}
+          <div className="grid grid-cols-8 gap-2">
+            {[
+              { key: 'overview', label: 'Overview', icon: '📋' },
+              { key: 'evaluation', label: 'Evaluation', icon: '🎯' },
+              { key: 'instructions', label: 'Instructions', icon: '📝' },
+              { key: 'pws', label: 'PWS/SOW', icon: '📄' },
+              { key: 'team', label: 'Team', icon: '👥' },
+              { key: 'subcontractors', label: 'Subs', icon: '🏗️' },
+              { key: 'pricing', label: 'Pricing', icon: '💰' },
+              { key: 'proposal', label: 'Proposal', icon: '📊' }
+            ].map((step, index) => {
+              const status = getStepStatus(step.key)
+              const canAccess = canAccessStep(step.key)
+              
+              return (
+                <div 
+                  key={step.key}
+                  className={`text-center cursor-pointer transition-all duration-200 ${
+                    canAccess ? 'opacity-100' : 'opacity-50'
+                  }`}
+                  onClick={() => canAccess && setActiveTab(step.key)}
+                >
+                  <div className={`
+                    w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center text-sm
+                    ${status.completed 
+                      ? 'bg-green-500 text-white' 
+                      : status.dataReady 
+                        ? 'bg-blue-500 text-white' 
+                        : canAccess 
+                          ? 'bg-gray-300 text-gray-600' 
+                          : 'bg-gray-200 text-gray-400'
+                    }
+                  `}>
+                    {status.completed ? '✓' : step.icon}
+                  </div>
+                  <div className="text-xs text-gray-600">{step.label}</div>
+                  {status.dataReady && (
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mx-auto mt-1"></div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </Card>
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -552,13 +644,23 @@ export default function RFPWorkspacePage() {
             <Card className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Evaluation Factors for Award</h3>
-                <Badge className="bg-blue-100 text-blue-800">Step 1 of 8</Badge>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-blue-100 text-blue-800">Step 2 of 8</Badge>
+                  {getStepStatus('evaluation').completed && (
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-6">
-                {/* Award Type */}
+                {/* Micro-Step 1: Award Type Analysis */}
                 <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-gray-900 mb-3">Award Type</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 1: Award Type Analysis</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Understanding how your proposal will be evaluated is critical for strategy</p>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="p-3 bg-white rounded-lg border border-blue-200">
                       <div className="flex items-center justify-between mb-2">
@@ -577,9 +679,14 @@ export default function RFPWorkspacePage() {
                   </div>
                 </div>
 
-                {/* Evaluation Criteria */}
+                {/* Micro-Step 2: Evaluation Criteria */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">Evaluation Criteria</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 2: Evaluation Criteria Breakdown</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">Understanding the weight of each evaluation factor guides your proposal strategy</p>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card className="p-4 border-l-4 border-l-blue-500">
                       <div className="flex items-center justify-between mb-2">
@@ -607,9 +714,14 @@ export default function RFPWorkspacePage() {
                   </div>
                 </div>
 
-                {/* Key Insights */}
+                {/* Micro-Step 3: Strategy Development */}
                 <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
-                  <h4 className="font-semibold text-gray-900 mb-3">Spirit AI Insights</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 3: Strategy Development</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Spirit AI has analyzed the evaluation factors and developed strategic recommendations</p>
+                  
                   <div className="space-y-3">
                     <div className="flex items-start space-x-3">
                       <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
@@ -625,6 +737,29 @@ export default function RFPWorkspacePage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Completion Action */}
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Ready for Next Step</h4>
+                      <p className="text-sm text-gray-600">Evaluation factors analyzed. Data ready for Instructions to Offerors.</p>
+                    </div>
+                    <Button 
+                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={() => {
+                        setJourneyProgress(prev => ({
+                          ...prev,
+                          evaluation: { completed: true, dataReady: true }
+                        }))
+                        setActiveTab('instructions')
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Complete & Continue
+                    </Button>
+                  </div>
+                </div>
               </div>
             </Card>
           </TabsContent>
@@ -633,13 +768,23 @@ export default function RFPWorkspacePage() {
             <Card className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Instructions to Offerors</h3>
-                <Badge className="bg-green-100 text-green-800">Step 2 of 8</Badge>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-green-100 text-green-800">Step 3 of 8</Badge>
+                  {getStepStatus('instructions').completed && (
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-6">
-                {/* Submission Requirements */}
+                {/* Micro-Step 1: Submission Requirements */}
                 <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
-                  <h4 className="font-semibold text-gray-900 mb-3">Submission Requirements</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 1: Submission Requirements Analysis</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Critical submission details that must be followed exactly</p>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div className="flex items-center space-x-3">
@@ -672,9 +817,14 @@ export default function RFPWorkspacePage() {
                   </div>
                 </div>
 
-                {/* Proposal Structure */}
+                {/* Micro-Step 2: Proposal Structure */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">Required Sections</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 2: Proposal Structure Planning</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">Understanding the required sections and page allocations</p>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card className="p-4 border-l-4 border-l-blue-500">
                       <h5 className="font-medium text-gray-900 mb-2">Technical Volume (30 pages)</h5>
@@ -698,9 +848,14 @@ export default function RFPWorkspacePage() {
                   </div>
                 </div>
 
-                {/* Compliance Checklist */}
+                {/* Micro-Step 3: Compliance Verification */}
                 <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-                  <h4 className="font-semibold text-gray-900 mb-3">Compliance Checklist</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 3: Compliance Verification</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Essential compliance items that must be verified before submission</p>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2">
@@ -732,6 +887,29 @@ export default function RFPWorkspacePage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Completion Action */}
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Ready for Next Step</h4>
+                      <p className="text-sm text-gray-600">Submission requirements analyzed. Data ready for PWS/SOW analysis.</p>
+                    </div>
+                    <Button 
+                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={() => {
+                        setJourneyProgress(prev => ({
+                          ...prev,
+                          instructions: { completed: true, dataReady: true }
+                        }))
+                        setActiveTab('pws')
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Complete & Continue
+                    </Button>
+                  </div>
+                </div>
               </div>
             </Card>
           </TabsContent>
@@ -740,13 +918,23 @@ export default function RFPWorkspacePage() {
             <Card className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Performance Work Statement (PWS)</h3>
-                <Badge className="bg-purple-100 text-purple-800">Step 3 of 8</Badge>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-purple-100 text-purple-800">Step 4 of 8</Badge>
+                  {getStepStatus('pws').completed && (
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-6">
-                {/* Scope Overview */}
+                {/* Micro-Step 1: Scope Overview */}
                 <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
-                  <h4 className="font-semibold text-gray-900 mb-3">Scope Overview</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 1: Scope Overview Analysis</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Understanding the overall scope and project parameters</p>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center p-3 bg-white rounded-lg border border-purple-200">
                       <div className="text-2xl font-bold text-purple-600 mb-1">12</div>
@@ -763,9 +951,14 @@ export default function RFPWorkspacePage() {
                   </div>
                 </div>
 
-                {/* CLIN Structure */}
+                {/* Micro-Step 2: CLIN Structure */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-900">Contract Line Item Numbers (CLINs)</h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 2: CLIN Structure Analysis</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-4">Contract Line Item Numbers define the pricing structure and deliverables</p>
+                  
                   <div className="space-y-3">
                     <Card className="p-4 border-l-4 border-l-blue-500">
                       <div className="flex items-center justify-between mb-2">
@@ -808,9 +1001,14 @@ export default function RFPWorkspacePage() {
                   </div>
                 </div>
 
-                {/* Key Requirements */}
+                {/* Micro-Step 3: Key Requirements */}
                 <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-                  <h4 className="font-semibold text-gray-900 mb-3">Key Requirements</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 3: Key Requirements Identification</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">Critical requirements that must be addressed in team assembly</p>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <div className="flex items-start space-x-3">
@@ -847,9 +1045,14 @@ export default function RFPWorkspacePage() {
                   </div>
                 </div>
 
-                {/* Spirit AI Analysis */}
+                {/* Micro-Step 4: Spirit AI Analysis */}
                 <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
-                  <h4 className="font-semibold text-gray-900 mb-3">Spirit AI Scope Analysis</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-semibold text-gray-900">Micro-Step 4: Spirit AI Scope Analysis</h4>
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">AI-powered analysis of scope requirements and team needs</p>
+                  
                   <div className="space-y-3">
                     <div className="flex items-start space-x-3">
                       <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
@@ -865,6 +1068,29 @@ export default function RFPWorkspacePage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Completion Action */}
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Ready for Team Assembly</h4>
+                      <p className="text-sm text-gray-600">PWS analyzed. Scope requirements identified. Ready to assemble team based on requirements.</p>
+                    </div>
+                    <Button 
+                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={() => {
+                        setJourneyProgress(prev => ({
+                          ...prev,
+                          pws: { completed: true, dataReady: true }
+                        }))
+                        setActiveTab('team')
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Complete & Continue
+                    </Button>
+                  </div>
+                </div>
               </div>
             </Card>
           </TabsContent>
@@ -873,7 +1099,12 @@ export default function RFPWorkspacePage() {
             <Card className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Team Assembly</h3>
-                <Badge className="bg-blue-100 text-blue-800">Step 4 of 8</Badge>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-blue-100 text-blue-800">Step 5 of 8</Badge>
+                  {getStepStatus('team').completed && (
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  )}
+                </div>
               </div>
               
               <div className="text-center py-12">
@@ -882,6 +1113,20 @@ export default function RFPWorkspacePage() {
                 </div>
                 <h4 className="text-lg font-medium text-gray-900 mb-2">Team Assembly & Gap Analysis</h4>
                 <p className="text-gray-600 mb-6">Based on PWS requirements, identify team gaps and assemble your core team</p>
+                
+                {/* Data Flow Indicator */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700">Data Ready from Previous Steps</span>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>✓ Evaluation Factors → Strategy guidance</div>
+                    <div>✓ Instructions → Compliance requirements</div>
+                    <div>✓ PWS/SOW → Scope requirements & team needs</div>
+                  </div>
+                </div>
+                
                 <Button className="btn-premium" onClick={() => window.location.href = '/rfp/workspace/team-assembly'}>
                   <Users className="h-4 w-4 mr-2" />
                   Go to Team Assembly
@@ -894,7 +1139,12 @@ export default function RFPWorkspacePage() {
             <Card className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Subcontractor Management</h3>
-                <Badge className="bg-green-100 text-green-800">Step 5 of 8</Badge>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-green-100 text-green-800">Step 6 of 8</Badge>
+                  {getStepStatus('subcontractors').completed && (
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  )}
+                </div>
               </div>
               
               <div className="text-center py-12">
@@ -903,6 +1153,20 @@ export default function RFPWorkspacePage() {
                 </div>
                 <h4 className="text-lg font-medium text-gray-900 mb-2">Subcontractor Selection & Management</h4>
                 <p className="text-gray-600 mb-6">Assign PWS scope to subcontractors, review bids, and manage pricing</p>
+                
+                {/* Data Flow Indicator */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700">Data Ready from Previous Steps</span>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>✓ PWS/SOW → Scope items to assign</div>
+                    <div>✓ Team Assembly → Identified gaps & requirements</div>
+                    <div>✓ Instructions → Compliance requirements for subs</div>
+                  </div>
+                </div>
+                
                 <Button className="btn-premium" onClick={() => window.location.href = '/rfp/workspace/subcontractors'}>
                   <Target className="h-4 w-4 mr-2" />
                   Go to Subcontractors
@@ -915,7 +1179,12 @@ export default function RFPWorkspacePage() {
             <Card className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Pricing Analysis</h3>
-                <Badge className="bg-orange-100 text-orange-800">Step 6 of 8</Badge>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-orange-100 text-orange-800">Step 7 of 8</Badge>
+                  {getStepStatus('pricing').completed && (
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  )}
+                </div>
               </div>
               
               <div className="text-center py-12">
@@ -924,6 +1193,20 @@ export default function RFPWorkspacePage() {
                 </div>
                 <h4 className="text-lg font-medium text-gray-900 mb-2">Cost Analysis & Pricing Strategy</h4>
                 <p className="text-gray-600 mb-6">Analyze costs, develop pricing strategy, and ensure competitiveness</p>
+                
+                {/* Data Flow Indicator */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-orange-50 rounded-lg border border-green-200">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700">Data Ready from Previous Steps</span>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>✓ PWS/SOW → CLIN structure & pricing targets</div>
+                    <div>✓ Subcontractors → Sub pricing & bid data</div>
+                    <div>✓ Evaluation Factors → Pricing strategy guidance</div>
+                  </div>
+                </div>
+                
                 <Button className="btn-premium" onClick={() => window.location.href = '/rfp/workspace/pricing'}>
                   <DollarSign className="h-4 w-4 mr-2" />
                   Go to Pricing
@@ -936,7 +1219,12 @@ export default function RFPWorkspacePage() {
             <Card className="card-premium p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-gray-900">Proposal Builder</h3>
-                <Badge className="bg-purple-100 text-purple-800">Step 7 of 8</Badge>
+                <div className="flex items-center space-x-3">
+                  <Badge className="bg-purple-100 text-purple-800">Step 8 of 8</Badge>
+                  {getStepStatus('proposal').completed && (
+                    <Badge className="bg-green-100 text-green-800">✓ Complete</Badge>
+                  )}
+                </div>
               </div>
               
               <div className="text-center py-12">
@@ -945,6 +1233,23 @@ export default function RFPWorkspacePage() {
                 </div>
                 <h4 className="text-lg font-medium text-gray-900 mb-2">Proposal Development</h4>
                 <p className="text-gray-600 mb-6">Build technical and price volumes based on team and subcontractor data</p>
+                
+                {/* Data Flow Indicator */}
+                <div className="mb-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center justify-center space-x-2 mb-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-gray-700">All Data Ready for Proposal</span>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    <div>✓ Evaluation Factors → Technical strategy & approach</div>
+                    <div>✓ Instructions → Format & compliance requirements</div>
+                    <div>✓ PWS/SOW → Scope & technical content</div>
+                    <div>✓ Team Assembly → Key personnel & past performance</div>
+                    <div>✓ Subcontractors → Subcontractor data & pricing</div>
+                    <div>✓ Pricing → Cost data & pricing strategy</div>
+                  </div>
+                </div>
+                
                 <Button className="btn-premium" onClick={() => window.location.href = '/rfp/workspace/proposal-builder'}>
                   <FileText className="h-4 w-4 mr-2" />
                   Go to Proposal Builder
