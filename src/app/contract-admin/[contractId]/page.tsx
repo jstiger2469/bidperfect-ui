@@ -460,6 +460,20 @@ export default function ContractWorkspacePage() {
     approvedDate: base.approvedDate || undefined,
     rejectionReason: base.rejectionReason || undefined,
     resubmissionDate: base.resubmissionDate || undefined,
+    tasks: base.tasks || [],
+    completionGuidance: base.completionGuidance || {
+      isComplete: false,
+      nextSteps: [],
+      recommendations: [],
+      lessonsLearned: [],
+      followUpActions: [],
+      successMetrics: {
+        onTime: true,
+        onBudget: true,
+        qualityMet: true,
+        stakeholderSatisfied: true
+      }
+    },
     attachments: base.attachments || [],
     comments: base.comments || [],
     metrics: base.metrics || {
@@ -716,7 +730,62 @@ export default function ContractWorkspacePage() {
       stakeholders: ['COR', 'Quality Manager', 'Safety Officer'],
       qualityScore: 92,
       riskLevel: 'high',
-      approvalRequired: true
+      approvalRequired: true,
+      tasks: [
+        {
+          id: 't-002-001',
+          deliverableId: 'd-002',
+          title: 'Review QC Plan',
+          description: 'Review and approve quality control plan documentation',
+          status: 'completed',
+          priority: 'high',
+          assignee: {
+            id: 'user-002',
+            name: 'Sarah Johnson',
+            email: 'sarah.johnson@company.com',
+            role: 'Quality Manager',
+            avatar: '/avatars/sarah-johnson.jpg'
+          },
+          assignedDate: '2025-08-20',
+          dueDate: '2025-08-25',
+          estimatedHours: 3,
+          actualHours: 2.5,
+          progress: 100,
+          dependencies: [],
+          tags: ['review', 'quality'],
+          location: 'Office',
+          attachments: [],
+          comments: [],
+          timeTracking: {
+            startTime: '2025-08-25T09:00:00Z',
+            endTime: '2025-08-25T11:30:00Z',
+            breaks: 0.5,
+            totalTime: 2.5
+          },
+          qualityChecklist: [
+            { item: 'Plan completeness verified', completed: true, completedBy: 'Sarah Johnson', completedDate: '2025-08-25' }
+          ],
+          automation: {
+            autoAssign: true,
+            autoRemind: true,
+            autoEscalate: false,
+            calendarSync: true
+          }
+        }
+      ],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: ['Complete implementation', 'Schedule COR inspection'],
+        recommendations: ['Include visual aids', 'Create reference guides'],
+        lessonsLearned: [],
+        followUpActions: ['Schedule quarterly reviews'],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: false,
+          stakeholderSatisfied: false
+        }
+      }
     }),
     createDeliverable({
       id: 'd-003',
@@ -733,7 +802,21 @@ export default function ContractWorkspacePage() {
       progress: 0,
       stakeholders: ['Safety Officer', 'COR', 'Base Safety Officer'],
       riskLevel: 'medium',
-      approvalRequired: true
+      approvalRequired: true,
+      tasks: [],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: ['Schedule inspection', 'Prepare checklist'],
+        recommendations: ['Coordinate with base safety'],
+        lessonsLearned: [],
+        followUpActions: [],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: true,
+          stakeholderSatisfied: true
+        }
+      }
     }),
     createDeliverable({
       id: 'd-004',
@@ -750,7 +833,21 @@ export default function ContractWorkspacePage() {
       progress: 0,
       dependencies: ['d-001'],
       stakeholders: ['COR', 'Subcontractor Manager'],
-      riskLevel: 'low'
+      riskLevel: 'low',
+      tasks: [],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: ['Collect performance data', 'Schedule review meetings'],
+        recommendations: ['Include past performance metrics'],
+        lessonsLearned: [],
+        followUpActions: [],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: true,
+          stakeholderSatisfied: true
+        }
+      }
     }),
     createDeliverable({
       id: 'd-005',
@@ -768,7 +865,21 @@ export default function ContractWorkspacePage() {
       dependencies: ['d-001', 'd-002', 'd-004'],
       stakeholders: ['COR', 'Contracting Officer', 'Program Manager'],
       riskLevel: 'high',
-      approvalRequired: true
+      approvalRequired: true,
+      tasks: [],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: ['Prepare financial summary', 'Schedule stakeholder meetings'],
+        recommendations: ['Include strategic planning'],
+        lessonsLearned: [],
+        followUpActions: [],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: true,
+          stakeholderSatisfied: true
+        }
+      }
     }),
     createDeliverable({
       id: 'd-006',
@@ -792,6 +903,21 @@ export default function ContractWorkspacePage() {
         qualityCompliance: true,
         costPerformance: true,
         stakeholderSatisfaction: 4.8
+      },
+      tasks: [],
+      completionGuidance: {
+        isComplete: true,
+        completionDate: '2025-08-15',
+        nextSteps: ['Continue monthly logging', 'Update inventory as needed'],
+        recommendations: ['Maintain current process'],
+        lessonsLearned: ['Process working well'],
+        followUpActions: ['Schedule next month\'s maintenance'],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: true,
+          stakeholderSatisfied: true
+        }
       }
     }),
     createDeliverable({
@@ -809,7 +935,21 @@ export default function ContractWorkspacePage() {
       progress: 0,
       stakeholders: ['Environmental Officer', 'COR', 'EPA Representative'],
       riskLevel: 'high',
-      approvalRequired: true
+      approvalRequired: true,
+      tasks: [],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: ['Verify EPA compliance', 'Schedule environmental review'],
+        recommendations: ['Coordinate with EPA'],
+        lessonsLearned: [],
+        followUpActions: [],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: true,
+          stakeholderSatisfied: true
+        }
+      }
     }),
     createDeliverable({
       id: 'd-008',
@@ -825,7 +965,21 @@ export default function ContractWorkspacePage() {
       priority: 'medium',
       progress: 85,
       stakeholders: ['Training Manager', 'COR'],
-      riskLevel: 'low'
+      riskLevel: 'low',
+      tasks: [],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: ['Complete remaining training', 'Verify certifications'],
+        recommendations: ['Schedule follow-up training'],
+        lessonsLearned: [],
+        followUpActions: [],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: true,
+          stakeholderSatisfied: true
+        }
+      }
     }),
     createDeliverable({
       id: 'd-009',
@@ -847,6 +1001,20 @@ export default function ContractWorkspacePage() {
         autoEscalation: true,
         autoApproval: false,
         integrationPoints: ['ERP', 'Financial System']
+      },
+      tasks: [],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: ['Complete report immediately', 'Notify COR of delay'],
+        recommendations: ['Implement better tracking'],
+        lessonsLearned: [],
+        followUpActions: [],
+        successMetrics: {
+          onTime: false,
+          onBudget: true,
+          qualityMet: true,
+          stakeholderSatisfied: false
+        }
       }
     }),
     createDeliverable({
@@ -864,7 +1032,21 @@ export default function ContractWorkspacePage() {
       progress: 0,
       stakeholders: ['Emergency Manager', 'COR', 'Base Emergency Management'],
       riskLevel: 'high',
-      approvalRequired: true
+      approvalRequired: true,
+      tasks: [],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: ['Review current plan', 'Coordinate with emergency management'],
+        recommendations: ['Include new procedures'],
+        lessonsLearned: [],
+        followUpActions: [],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: true,
+          stakeholderSatisfied: true
+        }
+      }
     })
   ])
 
@@ -943,7 +1125,7 @@ export default function ContractWorkspacePage() {
     const deliverable = deliverables.find(d => d.id === deliverableId)
     if (!deliverable) return { total: 0, completed: 0, inProgress: 0, unassigned: 0 }
     
-    const tasks = deliverable.tasks
+    const tasks = deliverable.tasks || []
     return {
       total: tasks.length,
       completed: tasks.filter(t => t.status === 'completed').length,
@@ -1488,7 +1670,7 @@ export default function ContractWorkspacePage() {
                   </span>
                 </div>
                 <div className="space-y-2">
-                  {deliverable.tasks.slice(0, 2).map((task) => (
+                  {(deliverable.tasks || []).slice(0, 2).map((task) => (
                     <div key={task.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
                       <div className="flex items-center space-x-2">
                         <div className={`w-2 h-2 rounded-full ${
@@ -1509,9 +1691,9 @@ export default function ContractWorkspacePage() {
                       </div>
                     </div>
                   ))}
-                  {deliverable.tasks.length > 2 && (
+                  {(deliverable.tasks || []).length > 2 && (
                     <div className="text-xs text-blue-600 font-medium cursor-pointer hover:underline">
-                      +{deliverable.tasks.length - 2} more tasks
+                      +{(deliverable.tasks || []).length - 2} more tasks
                     </div>
                   )}
                 </div>
