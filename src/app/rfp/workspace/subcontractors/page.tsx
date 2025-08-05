@@ -103,7 +103,8 @@ import {
   UserX,
   UserPlus,
   Target,
-  BarChart3
+  BarChart3,
+  DollarSign as DollarSignIcon
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBidStore, Subcontractor } from '@/app/shared/stores/useBidStore'
@@ -834,12 +835,72 @@ export default function SubcontractorManagementPage() {
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
-      {/* Compliance Check Summary */}
+      {/* Dynamic Spirit AI Analysis */}
       <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mr-3">
+              <Brain className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="font-semibold text-gray-900">Dynamic Spirit AI Analysis</h3>
+          </div>
+          <Button 
+            onClick={() => startTeamAnalysis(rfpId)}
+            disabled={spiritAnalysis?.isProcessing}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            {spiritAnalysis?.isProcessing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" />
+                Start Analysis
+              </>
+            )}
+          </Button>
+        </div>
+        
+        {spiritAnalysis?.isProcessing && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">{spiritAnalysis.currentPhase}</span>
+              <span className="text-sm font-medium text-gray-900">{spiritAnalysis.progress}%</span>
+            </div>
+            <Progress value={spiritAnalysis.progress} className="h-2" />
+          </div>
+        )}
+        
+        {!spiritAnalysis?.isProcessing && spiritAnalysis?.teamReadiness > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{spiritAnalysis.teamReadiness}%</div>
+              <div className="text-sm text-gray-600">Team Readiness</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{spiritAnalysis.gaps.critical.length}</div>
+              <div className="text-sm text-gray-600">Critical Gaps</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{spiritAnalysis.automatedActions.completed.length}</div>
+              <div className="text-sm text-gray-600">Actions Completed</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">{subcontractors.length}</div>
+              <div className="text-sm text-gray-600">Active Subs</div>
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Dynamic Compliance Check Summary */}
+      <Card className="p-6 bg-gradient-to-br from-white to-green-50/30 border-0 shadow-lg">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Compliance Check Summary</h3>
-            <p className="text-gray-600">Final checkpoint before proposal submission – let's ensure every sub meets the mark.</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Dynamic Compliance Check Summary</h3>
+            <p className="text-gray-600">Real-time compliance monitoring across all subcontractors</p>
           </div>
           <div className="text-right">
             <div className="text-3xl font-bold text-blue-600">{overallCompliance}%</div>
@@ -847,37 +908,60 @@ export default function SubcontractorManagementPage() {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white/50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">COI Compliance Status</span>
-              <Badge className="bg-green-100 text-green-800">Active</Badge>
+              <span className="text-sm font-medium text-gray-700">Insurance Compliance</span>
+              <Badge className="bg-green-100 text-green-800">
+                {subcontractors.filter(sub => sub.compliance.insurance).length}/{subcontractors.length}
+              </Badge>
             </div>
-            <Progress value={85} className="h-2" />
-            <p className="text-xs text-gray-600 mt-1">Estimated submission risk 15%</p>
+            <Progress value={(subcontractors.filter(sub => sub.compliance.insurance).length / Math.max(subcontractors.length, 1)) * 100} className="h-2" />
+            <p className="text-xs text-gray-600 mt-1">All subcontractors insured</p>
           </div>
           <div className="bg-white/50 p-4 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">WD Alignment</span>
-              <Badge className="bg-green-100 text-green-800">Compliant</Badge>
+              <span className="text-sm font-medium text-gray-700">Bonding Status</span>
+              <Badge className="bg-green-100 text-green-800">
+                {subcontractors.filter(sub => sub.compliance.bonding).length}/{subcontractors.length}
+              </Badge>
             </div>
-            <Progress value={92} className="h-2" />
-            <p className="text-xs text-gray-600 mt-1">All labor categories verified</p>
+            <Progress value={(subcontractors.filter(sub => sub.compliance.bonding).length / Math.max(subcontractors.length, 1)) * 100} className="h-2" />
+            <p className="text-xs text-gray-600 mt-1">Performance bonds active</p>
+          </div>
+          <div className="bg-white/50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Certification Coverage</span>
+              <Badge className="bg-blue-100 text-blue-800">
+                {subcontractors.filter(sub => sub.compliance.certifications.length > 0).length}/{subcontractors.length}
+              </Badge>
+            </div>
+            <Progress value={(subcontractors.filter(sub => sub.compliance.certifications.length > 0).length / Math.max(subcontractors.length, 1)) * 100} className="h-2" />
+            <p className="text-xs text-gray-600 mt-1">Required certifications verified</p>
           </div>
         </div>
       </Card>
 
-      {/* Subcontractor Compliance Table */}
+      {/* Dynamic Subcontractor Compliance Matrix */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Subcontractor Compliance Matrix</h3>
-          <Button 
-            onClick={handleAddSubcontractor}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Subcontractor
-          </Button>
+          <h3 className="text-lg font-semibold text-gray-900">Dynamic Subcontractor Compliance Matrix</h3>
+          <div className="flex space-x-2">
+            <Button 
+              onClick={handleAddSubcontractor}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Subcontractor
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={() => updateTeamAssemblyData(rfpId, { showScenarioSimulator: true })}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Risk Analysis
+            </Button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -896,9 +980,14 @@ export default function SubcontractorManagementPage() {
               {subcontractors.map((sub) => (
                 <tr key={sub.id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-3">
-                    <div>
-                      <div className="font-medium text-gray-900">{sub.name}</div>
-                      <div className="text-sm text-gray-600">{sub.type}</div>
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <span className="text-blue-600 font-bold text-xs">{sub.logo}</span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{sub.name}</div>
+                        <div className="text-sm text-gray-600">{sub.type}</div>
+                      </div>
                     </div>
                   </td>
                   <td className="py-3">
@@ -976,93 +1065,266 @@ export default function SubcontractorManagementPage() {
           </table>
         </div>
       </Card>
+
+      {/* Dynamic Performance Metrics */}
+      <Card className="p-6 bg-gradient-to-br from-white to-purple-50/30 border-0">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Dynamic Performance Metrics</h3>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-white/50 p-4 rounded-lg text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {Math.round(subcontractors.reduce((total, sub) => total + sub.pastPerformance, 0) / Math.max(subcontractors.length, 1) * 10) / 10}
+            </div>
+            <div className="text-sm text-gray-600">Avg Performance Score</div>
+          </div>
+          <div className="bg-white/50 p-4 rounded-lg text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {Math.round(subcontractors.reduce((total, sub) => total + sub.priceCompetitiveness, 0) / Math.max(subcontractors.length, 1))}%
+            </div>
+            <div className="text-sm text-gray-600">Price Competitiveness</div>
+          </div>
+          <div className="bg-white/50 p-4 rounded-lg text-center">
+            <div className="text-2xl font-bold text-purple-600">
+              {Math.round(subcontractors.reduce((total, sub) => total + sub.matchScore, 0) / Math.max(subcontractors.length, 1))}%
+            </div>
+            <div className="text-sm text-gray-600">Match Score</div>
+          </div>
+          <div className="bg-white/50 p-4 rounded-lg text-center">
+            <div className="text-2xl font-bold text-orange-600">
+              ${(subcontractors.reduce((total, sub) => total + sub.pricing.proposedAmount, 0) / 1000000).toFixed(1)}M
+            </div>
+            <div className="text-sm text-gray-600">Total Value</div>
+          </div>
+        </div>
+      </Card>
     </div>
   )
 
   const renderPricingTab = () => (
     <div className="space-y-6">
-      {/* Pricing Estimator */}
+      {/* Dynamic Pricing Intelligence */}
+      <Card className="p-6 bg-gradient-to-r from-green-50 to-blue-50 border-0">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center mr-3">
+              <DollarSign className="h-4 w-4 text-white" />
+            </div>
+            <h3 className="font-semibold text-gray-900">Dynamic Pricing Intelligence</h3>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-green-600">
+              ${subcontractors.reduce((total, sub) => total + sub.pricing.proposedAmount, 0).toLocaleString()}
+            </div>
+            <div className="text-sm text-gray-600">Total Subcontractor Value</div>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white/50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Average Rate</span>
+              <Badge className="bg-blue-100 text-blue-800">
+                ${Math.round(subcontractors.reduce((total, sub) => total + Object.values(sub.pricing.laborRates)[0] || 0, 0) / Math.max(subcontractors.length, 1))}/hr
+              </Badge>
+            </div>
+            <Progress value={75} className="h-2" />
+            <p className="text-xs text-gray-600 mt-1">Competitive with market rates</p>
+          </div>
+          <div className="bg-white/50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Total Overhead</span>
+              <Badge className="bg-orange-100 text-orange-800">
+                ${subcontractors.reduce((total, sub) => total + sub.pricing.overhead, 0).toLocaleString()}
+              </Badge>
+            </div>
+            <Progress value={82} className="h-2" />
+            <p className="text-xs text-gray-600 mt-1">Within budget parameters</p>
+          </div>
+          <div className="bg-white/50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Profit Margin</span>
+              <Badge className="bg-green-100 text-green-800">
+                {Math.round((subcontractors.reduce((total, sub) => total + sub.pricing.profit, 0) / Math.max(subcontractors.reduce((total, sub) => total + sub.pricing.proposedAmount, 0), 1)) * 100)}%
+              </Badge>
+            </div>
+            <Progress value={68} className="h-2" />
+            <p className="text-xs text-gray-600 mt-1">Healthy profit margins</p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Dynamic Pricing Estimator */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing Estimator</h3>
-        <p className="text-gray-600 mb-6">Internal view before sending scope and pricing to subcontractors</p>
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Dynamic Pricing Estimator</h3>
+            <p className="text-gray-600">Real-time pricing analysis based on subcontractor data and market conditions</p>
+          </div>
+          <Button 
+            onClick={() => updateTeamAssemblyData(rfpId, { showScenarioSimulator: true })}
+            className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+          >
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Run Scenario Analysis
+          </Button>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">Labor Cost Breakdown</h4>
-            <div className="space-y-3">
-              {pricingEstimates.map((estimate, index) => (
-                <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-gray-900">{estimate.role}</span>
-                    <Badge className={estimate.wdCompliance ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                      {estimate.wdCompliance ? 'WD Compliant' : 'WD Issue'}
+            <h4 className="font-medium text-gray-900 mb-4">Subcontractor Pricing Breakdown</h4>
+            <div className="space-y-4">
+              {subcontractors.map((sub) => (
+                <motion.div 
+                  key={sub.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <span className="text-blue-600 font-bold text-sm">{sub.logo}</span>
+                      </div>
+                      <div>
+                        <h5 className="font-medium text-gray-900">{sub.name}</h5>
+                        <p className="text-sm text-gray-600">{sub.type}</p>
+                      </div>
+                    </div>
+                    <Badge className={
+                      sub.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      sub.status === 'evaluating' ? 'bg-blue-100 text-blue-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }>
+                      {sub.status}
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div>Hours: {estimate.hours}</div>
-                    <div>Rate: ${estimate.rate}/hr</div>
-                    <div>Fringe: ${estimate.fringe}/hr</div>
-                    <div>Total: ${estimate.total}/hr</div>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Proposed Amount:</span>
+                      <div className="font-semibold text-green-600">${sub.pricing.proposedAmount.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Materials:</span>
+                      <div className="font-semibold">${sub.pricing.materials.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Overhead:</span>
+                      <div className="font-semibold">${sub.pricing.overhead.toLocaleString()}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Profit:</span>
+                      <div className="font-semibold text-blue-600">${sub.pricing.profit.toLocaleString()}</div>
+                    </div>
                   </div>
-                </div>
+                  
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex items-center justify-between text-xs text-gray-600">
+                      <span>Match Score: {sub.matchScore}%</span>
+                      <span>Performance: {sub.pastPerformance}/5.0</span>
+                    </div>
+                    <Progress value={sub.matchScore} className="h-1 mt-1" />
+                  </div>
+                </motion.div>
               ))}
             </div>
           </div>
           
           <div>
-            <h4 className="font-medium text-gray-900 mb-3">Pricing Summary</h4>
-            <div className="space-y-3">
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">$412,000</div>
-                <div className="text-sm text-blue-800">Total Estimated Cost</div>
-              </div>
-              <div className="p-4 bg-green-50 rounded-lg">
-                <div className="text-lg font-semibold text-green-600">12%</div>
-                <div className="text-sm text-green-800">Suggested Markup</div>
-              </div>
-              <div className="p-4 bg-yellow-50 rounded-lg">
-                <div className="text-lg font-semibold text-yellow-600">Fair</div>
-                <div className="text-sm text-yellow-800">Competitive Position</div>
+            <h4 className="font-medium text-gray-900 mb-4">Labor Rate Analysis</h4>
+            <div className="space-y-4">
+              {subcontractors.flatMap(sub => 
+                Object.entries(sub.pricing.laborRates).map(([role, rate]) => ({
+                  subcontractor: sub.name,
+                  role,
+                  rate,
+                  logo: sub.logo,
+                  status: sub.status
+                }))
+              ).map((item, index) => (
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="p-3 bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                        <span className="text-blue-600 font-bold text-xs">{item.logo}</span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{item.role}</div>
+                        <div className="text-sm text-gray-600">{item.subcontractor}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-green-600">${item.rate}/hr</div>
+                      <Badge className={
+                        item.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        item.status === 'evaluating' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }>
+                        {item.status}
+                      </Badge>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+            
+            <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+              <h5 className="font-medium text-purple-900 mb-2">Pricing Insights</h5>
+              <div className="space-y-2 text-sm text-purple-800">
+                <div className="flex items-center">
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                  <span>Average rate is competitive with market standards</span>
+                </div>
+                <div className="flex items-center">
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                  <span>Total overhead within acceptable parameters</span>
+                </div>
+                <div className="flex items-center">
+                  <AlertTriangle className="h-4 w-4 mr-2 text-yellow-600" />
+                  <span>Consider negotiating with {subcontractors.find(s => s.status === 'evaluating')?.name || 'pending subcontractors'}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </Card>
 
-      {/* Spirit AI Pricing Insights */}
-      <Card className="p-6 bg-gradient-to-r from-purple-50 to-blue-50 border-0">
-        <div className="flex items-center mb-4">
-          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-blue-600 flex items-center justify-center mr-3">
-            <Brain className="h-4 w-4 text-white" />
+      {/* Compliance & Risk Analysis */}
+      <Card className="p-6 bg-gradient-to-br from-white to-red-50/30 border-0">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Compliance & Risk Analysis</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white/50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Insurance Compliance</span>
+              <Badge className="bg-green-100 text-green-800">
+                {subcontractors.filter(sub => sub.compliance.insurance).length}/{subcontractors.length}
+              </Badge>
+            </div>
+            <Progress value={(subcontractors.filter(sub => sub.compliance.insurance).length / Math.max(subcontractors.length, 1)) * 100} className="h-2" />
           </div>
-          <h3 className="font-semibold text-gray-900">Spirit AI Pricing Insights</h3>
-        </div>
-        
-        <div className="space-y-3">
-          <div className="p-3 bg-white/50 rounded-lg">
-            <p className="text-sm text-gray-700">
-              ⚠️ Fringe not calculated for 2 roles - may impact WD compliance
-            </p>
+          <div className="bg-white/50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Bonding Compliance</span>
+              <Badge className="bg-green-100 text-green-800">
+                {subcontractors.filter(sub => sub.compliance.bonding).length}/{subcontractors.length}
+              </Badge>
+            </div>
+            <Progress value={(subcontractors.filter(sub => sub.compliance.bonding).length / Math.max(subcontractors.length, 1)) * 100} className="h-2" />
           </div>
-          <div className="p-3 bg-white/50 rounded-lg">
-            <p className="text-sm text-gray-700">
-              💡 Suggested markup is below standard for this NAICS in Louisiana
-            </p>
+          <div className="bg-white/50 p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-700">Certification Status</span>
+              <Badge className="bg-blue-100 text-blue-800">
+                {subcontractors.filter(sub => sub.compliance.certifications.length > 0).length}/{subcontractors.length}
+              </Badge>
+            </div>
+            <Progress value={(subcontractors.filter(sub => sub.compliance.certifications.length > 0).length / Math.max(subcontractors.length, 1)) * 100} className="h-2" />
           </div>
-          <div className="p-3 bg-white/50 rounded-lg">
-            <p className="text-sm text-gray-700">
-              ✅ Pricing structure aligns well with evaluation criteria (30% weight)
-            </p>
-          </div>
-        </div>
-        
-        <div className="mt-4 flex space-x-3">
-          <Button size="sm">
-            Review with Sub
-          </Button>
-          <Button size="sm" variant="outline">
-            Adjust Pricing
-          </Button>
         </div>
       </Card>
     </div>
