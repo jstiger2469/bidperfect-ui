@@ -1558,73 +1558,173 @@ export default function ContractAdminPage() {
           </div>
         </div>
 
-        {/* Contract Selection */}
-        <Card className="card-premium p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-            <div className="flex items-center space-x-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Select Contract</label>
-                <select 
-                  value={selectedContract}
-                  onChange={(e) => setSelectedContract(e.target.value)}
-                  className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {filteredContracts.map((contract) => (
-                    <option key={contract.id} value={contract.id}>
-                      {contract.number} - {contract.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Filter by Status</label>
+        {/* Contract Selection - Apple Style Cards */}
+        <div className="space-y-6">
+          {/* Search and Filter Bar */}
+          <Card className="card-premium p-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Search contracts..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-64"
+                  />
+                </div>
                 <select 
                   value={contractFilter}
                   onChange={(e) => setContractFilter(e.target.value)}
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="all">All</option>
+                  <option value="all">All Contracts</option>
                   <option value="active">Active</option>
                   <option value="pending">Pending</option>
                   <option value="completed">Completed</option>
                   <option value="terminated">Terminated</option>
                 </select>
               </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search contracts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-              <Button variant="outline" className="btn-ghost-premium">
+              <Button className="btn-premium">
                 <Plus className="h-4 w-4 mr-2" />
-                Add Contract
+                Add New Contract
               </Button>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Current Contract Info */}
-        <Card className="card-premium p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">{currentContract.number}</h3>
-              <p className="text-gray-600">{currentContract.title}</p>
-              <p className="text-sm text-gray-500">{currentContract.agency}</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Contract Value</p>
-                <p className="text-lg font-semibold">${(currentContract.value / 1000000).toFixed(1)}M</p>
+          {/* Contract Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredContracts.map((contract) => (
+              <Card 
+                key={contract.id}
+                className={`card-premium p-6 cursor-pointer transition-all duration-200 hover:shadow-lg ${
+                  selectedContract === contract.id 
+                    ? 'ring-2 ring-blue-500 bg-blue-50' 
+                    : 'hover:bg-gray-50'
+                }`}
+                onClick={() => setSelectedContract(contract.id)}
+              >
+                {/* Contract Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 text-lg mb-1">{contract.number}</h3>
+                    <p className="text-gray-600 text-sm line-clamp-2">{contract.title}</p>
+                  </div>
+                  <Badge variant={
+                    contract.status === 'active' ? 'default' : 
+                    contract.status === 'completed' ? 'secondary' : 'outline'
+                  } className="ml-2">
+                    {contract.status.toUpperCase()}
+                  </Badge>
+                </div>
+
+                {/* Agency Info */}
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500 mb-1">Agency</p>
+                  <p className="text-sm font-medium text-gray-900">{contract.agency}</p>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Value</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      ${(contract.value / 1000000).toFixed(1)}M
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Performance</p>
+                    <p className="text-sm font-semibold text-blue-600">
+                      {contract.performance.overall}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Progress Indicators */}
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">Budget Burn</span>
+                    <span className={`font-medium ${
+                      contract.budget.burnRate > 80 ? 'text-red-600' :
+                      contract.budget.burnRate > 60 ? 'text-orange-600' : 'text-green-600'
+                    }`}>
+                      {contract.budget.burnRate}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5">
+                    <div 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        contract.budget.burnRate > 80 ? 'bg-red-500' :
+                        contract.budget.burnRate > 60 ? 'bg-orange-500' : 'bg-green-500'
+                      }`}
+                      style={{ width: `${Math.min(contract.budget.burnRate, 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Contract Details */}
+                <div className="space-y-2 text-xs text-gray-500">
+                  <div className="flex justify-between">
+                    <span>Start Date:</span>
+                    <span className="font-medium">{contract.startDate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>End Date:</span>
+                    <span className="font-medium">{contract.endDate}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Type:</span>
+                    <span className="font-medium capitalize">{contract.type.replace('-', ' ')}</span>
+                  </div>
+                </div>
+
+                {/* Selection Indicator */}
+                {selectedContract === contract.id && (
+                  <div className="absolute top-4 right-4">
+                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                      <CheckCircle className="h-4 w-4 text-white" />
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+
+          {/* No Results */}
+          {filteredContracts.length === 0 && (
+            <Card className="card-premium p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="h-8 w-8 text-gray-400" />
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Status</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No contracts found</h3>
+              <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
+              <Button className="btn-premium">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Your First Contract
+              </Button>
+            </Card>
+          )}
+        </div>
+
+        {/* Current Contract Info - Apple Style */}
+        {selectedContract && (
+          <Card className="card-premium p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">{currentContract.number}</h3>
+                  <p className="text-gray-600 font-medium">{currentContract.title}</p>
+                  <p className="text-sm text-gray-500">{currentContract.agency}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3">
+                <Badge variant="outline" className="text-sm">
+                  {currentContract.type.toUpperCase()}
+                </Badge>
                 <Badge variant={
                   currentContract.status === 'active' ? 'default' : 
                   currentContract.status === 'completed' ? 'secondary' : 'outline'
@@ -1632,13 +1732,48 @@ export default function ContractAdminPage() {
                   {currentContract.status.toUpperCase()}
                 </Badge>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Performance</p>
-                <p className="text-lg font-semibold text-blue-600">{currentContract.performance.overall}%</p>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">Contract Value</p>
+                <p className="text-2xl font-bold text-gray-900">${(currentContract.value / 1000000).toFixed(1)}M</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">Performance</p>
+                <p className="text-2xl font-bold text-blue-600">{currentContract.performance.overall}%</p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">Budget Burn</p>
+                <p className={`text-2xl font-bold ${
+                  currentContract.budget.burnRate > 80 ? 'text-red-600' :
+                  currentContract.budget.burnRate > 60 ? 'text-orange-600' : 'text-green-600'
+                }`}>
+                  {currentContract.budget.burnRate}%
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600 mb-1">Days Remaining</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {Math.ceil((new Date(currentContract.endDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))}
+                </p>
               </div>
             </div>
-          </div>
-        </Card>
+
+            <div className="mt-4 pt-4 border-t border-blue-200">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center space-x-4">
+                  <span className="text-gray-600">Contracting Officer: <span className="font-medium text-gray-900">{currentContract.contractingOfficer}</span></span>
+                  <span className="text-gray-600">COR: <span className="font-medium text-gray-900">{currentContract.cor}</span></span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-gray-600">Period:</span>
+                  <span className="font-medium text-gray-900">{currentContract.startDate} - {currentContract.endDate}</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
