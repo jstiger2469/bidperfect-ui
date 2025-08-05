@@ -102,12 +102,96 @@ interface Deliverable {
   contractId: string
   title: string
   description: string
-  type: 'report' | 'milestone' | 'inspection' | 'review'
+  type: 'report' | 'milestone' | 'inspection' | 'review' | 'training' | 'compliance' | 'financial'
   dueDate: string
-  status: 'pending' | 'in-progress' | 'completed' | 'overdue'
+  status: 'pending' | 'in-progress' | 'completed' | 'overdue' | 'approved' | 'rejected'
   assignedTo: string
   documents: string[]
   notes: string
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  progress: number
+  dependencies: string[]
+  stakeholders: string[]
+  qualityScore?: number
+  costVariance?: number
+  scheduleVariance?: number
+  riskLevel: 'low' | 'medium' | 'high' | 'critical'
+  lastUpdated: string
+  nextReviewDate?: string
+  approvalRequired: boolean
+  approvedBy?: string
+  approvedDate?: string
+  rejectionReason?: string
+  resubmissionDate?: string
+  attachments: {
+    name: string
+    type: string
+    size: string
+    uploadedBy: string
+    uploadedDate: string
+    version: string
+  }[]
+  comments: {
+    id: string
+    author: string
+    content: string
+    timestamp: string
+    type: 'internal' | 'external' | 'cor' | 'stakeholder'
+  }[]
+  metrics: {
+    onTimeDelivery: boolean
+    qualityCompliance: boolean
+    costPerformance: boolean
+    stakeholderSatisfaction: number
+  }
+  automation: {
+    autoReminders: boolean
+    autoEscalation: boolean
+    autoApproval: boolean
+    integrationPoints: string[]
+  }
+}
+
+interface DeliverableAssignment {
+  id: string
+  deliverableId: string
+  assigneeId: string
+  assigneeName: string
+  assigneeEmail: string
+  assigneeRole: string
+  assignedDate: string
+  dueDate: string
+  status: 'assigned' | 'in-progress' | 'completed' | 'overdue'
+  progress: number
+  notes: string
+  skills: string[]
+  availability: 'available' | 'partially' | 'unavailable'
+  workload: number
+  performance: {
+    onTimeDelivery: number
+    qualityScore: number
+    stakeholderSatisfaction: number
+  }
+}
+
+interface DeliverableTemplate {
+  id: string
+  name: string
+  description: string
+  type: string
+  category: string
+  defaultDuration: number
+  requiredDocuments: string[]
+  approvalWorkflow: string[]
+  qualityCriteria: string[]
+  complianceRequirements: string[]
+  riskFactors: string[]
+  automationRules: {
+    autoAssign: boolean
+    autoRemind: boolean
+    autoEscalate: boolean
+    integrationTriggers: string[]
+  }
 }
 
 interface Subcontractor {
@@ -180,6 +264,51 @@ export default function ContractWorkspacePage() {
   const router = useRouter()
   const contractId = params.contractId as string
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [deliverableFilter, setDeliverableFilter] = useState('all')
+  const [deliverableSearch, setDeliverableSearch] = useState('')
+  const [selectedDeliverable, setSelectedDeliverable] = useState<string | null>(null)
+  const [showDeliverableModal, setShowDeliverableModal] = useState(false)
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false)
+  const [deliverableTemplates] = useState<DeliverableTemplate[]>([
+    {
+      id: 't-001',
+      name: 'Monthly Performance Report',
+      description: 'Standard monthly performance reporting template',
+      type: 'report',
+      category: 'Performance',
+      defaultDuration: 30,
+      requiredDocuments: ['Performance Metrics', 'Quality Data', 'Schedule Variance'],
+      approvalWorkflow: ['Team Lead', 'COR', 'Contracting Officer'],
+      qualityCriteria: ['On-time delivery', 'Complete data', 'Stakeholder approval'],
+      complianceRequirements: ['FAR 52.242-15', 'Quality Assurance'],
+      riskFactors: ['Data accuracy', 'Stakeholder availability', 'System integration'],
+      automationRules: {
+        autoAssign: true,
+        autoRemind: true,
+        autoEscalate: true,
+        integrationTriggers: ['ERP', 'Quality System', 'Project Management']
+      }
+    },
+    {
+      id: 't-002',
+      name: 'Quality Control Implementation',
+      description: 'Quality control plan implementation milestone',
+      type: 'milestone',
+      category: 'Quality',
+      defaultDuration: 45,
+      requiredDocuments: ['QC Plan', 'Implementation Checklist', 'Training Materials'],
+      approvalWorkflow: ['Quality Manager', 'COR', 'Safety Officer'],
+      qualityCriteria: ['Plan approval', 'Implementation complete', 'Training completed'],
+      complianceRequirements: ['ISO 9001', 'Safety Standards'],
+      riskFactors: ['Resource availability', 'Training completion', 'Stakeholder buy-in'],
+      automationRules: {
+        autoAssign: false,
+        autoRemind: true,
+        autoEscalate: true,
+        integrationTriggers: ['Quality System', 'Training Platform']
+      }
+    }
+  ])
   const [spiritAnalysis, setSpiritAnalysis] = useState({
     isProcessing: false,
     progress: 0,
@@ -230,19 +359,262 @@ export default function ContractWorkspacePage() {
     }
   ])
 
+  // Helper function to create complete deliverable objects
+  const createDeliverable = (base: any): Deliverable => ({
+    ...base,
+    priority: base.priority || 'medium',
+    progress: base.progress || 0,
+    dependencies: base.dependencies || [],
+    stakeholders: base.stakeholders || ['COR'],
+    qualityScore: base.qualityScore || undefined,
+    costVariance: base.costVariance || 0,
+    scheduleVariance: base.scheduleVariance || 0,
+    riskLevel: base.riskLevel || 'medium',
+    lastUpdated: base.lastUpdated || new Date().toISOString(),
+    nextReviewDate: base.nextReviewDate || undefined,
+    approvalRequired: base.approvalRequired || false,
+    approvedBy: base.approvedBy || undefined,
+    approvedDate: base.approvedDate || undefined,
+    rejectionReason: base.rejectionReason || undefined,
+    resubmissionDate: base.resubmissionDate || undefined,
+    attachments: base.attachments || [],
+    comments: base.comments || [],
+    metrics: base.metrics || {
+      onTimeDelivery: true,
+      qualityCompliance: true,
+      costPerformance: true,
+      stakeholderSatisfaction: 4.0
+    },
+    automation: base.automation || {
+      autoReminders: true,
+      autoEscalation: false,
+      autoApproval: false,
+      integrationPoints: []
+    }
+  })
+
   const [deliverables] = useState<Deliverable[]>([
-    {
+    createDeliverable({
       id: 'd-001',
       contractId: 'c-001',
       title: 'Monthly Performance Report',
-      description: 'Monthly status report covering quality metrics and schedule adherence',
+      description: 'Comprehensive monthly status report covering quality metrics, schedule adherence, cost performance, and subcontractor performance metrics',
       type: 'report',
       dueDate: '2025-08-31',
       status: 'pending',
       assignedTo: 'Mike Davis',
-      documents: [],
-      notes: 'Include subcontractor performance metrics'
-    }
+      documents: ['Monthly_Report_Template.docx', 'Performance_Metrics_Guide.pdf'],
+      notes: 'Include subcontractor performance metrics, quality control data, and schedule variance analysis',
+      priority: 'high',
+      progress: 65,
+      dependencies: ['d-006'],
+      stakeholders: ['COR', 'Contracting Officer', 'Quality Manager'],
+      qualityScore: 85,
+      costVariance: -2.5,
+      scheduleVariance: 0,
+      riskLevel: 'medium',
+      lastUpdated: '2025-08-28',
+      nextReviewDate: '2025-09-05',
+      approvalRequired: true,
+      attachments: [
+        {
+          name: 'Monthly_Report_Template.docx',
+          type: 'document',
+          size: '2.3 MB',
+          uploadedBy: 'Mike Davis',
+          uploadedDate: '2025-08-25',
+          version: '2.1'
+        }
+      ],
+      comments: [
+        {
+          id: 'c-001',
+          author: 'Sarah Johnson',
+          content: 'Please include subcontractor performance metrics in section 3.2',
+          timestamp: '2025-08-27T10:30:00Z',
+          type: 'cor'
+        }
+      ],
+      metrics: {
+        onTimeDelivery: true,
+        qualityCompliance: true,
+        costPerformance: true,
+        stakeholderSatisfaction: 4.2
+      },
+      automation: {
+        autoReminders: true,
+        autoEscalation: true,
+        autoApproval: false,
+        integrationPoints: ['ERP', 'Quality Management System']
+      }
+    }),
+    createDeliverable({
+      id: 'd-002',
+      contractId: 'c-001',
+      title: 'Quality Control Plan Implementation',
+      description: 'Implementation and documentation of quality control procedures for HVAC maintenance services',
+      type: 'milestone',
+      dueDate: '2025-09-15',
+      status: 'in-progress',
+      assignedTo: 'Sarah Johnson',
+      documents: ['QC_Plan_v2.1.pdf', 'Implementation_Checklist.xlsx', 'Training_Materials.zip'],
+      notes: 'Requires COR approval before proceeding to next phase',
+      priority: 'critical',
+      progress: 75,
+      dependencies: ['d-001'],
+      stakeholders: ['COR', 'Quality Manager', 'Safety Officer'],
+      qualityScore: 92,
+      riskLevel: 'high',
+      approvalRequired: true
+    }),
+    createDeliverable({
+      id: 'd-003',
+      contractId: 'c-001',
+      title: 'Safety Inspection Report',
+      description: 'Quarterly safety inspection and compliance report for all maintenance activities',
+      type: 'inspection',
+      dueDate: '2025-09-30',
+      status: 'pending',
+      assignedTo: 'Robert Wilson',
+      documents: ['Safety_Protocols.pdf', 'Inspection_Checklist.docx'],
+      notes: 'Coordinate with base safety officer for joint inspection',
+      priority: 'high',
+      progress: 0,
+      stakeholders: ['Safety Officer', 'COR', 'Base Safety Officer'],
+      riskLevel: 'medium',
+      approvalRequired: true
+    }),
+    createDeliverable({
+      id: 'd-004',
+      contractId: 'c-001',
+      title: 'Subcontractor Performance Review',
+      description: 'Quarterly review of subcontractor performance, compliance, and deliverables',
+      type: 'review',
+      dueDate: '2025-10-15',
+      status: 'pending',
+      assignedTo: 'Lisa Davis',
+      documents: ['Subcontractor_Evaluation_Form.docx', 'Performance_Criteria.pdf'],
+      notes: 'Include past performance data and recommendations for contract modifications',
+      priority: 'medium',
+      progress: 0,
+      dependencies: ['d-001'],
+      stakeholders: ['COR', 'Subcontractor Manager'],
+      riskLevel: 'low'
+    }),
+    createDeliverable({
+      id: 'd-005',
+      contractId: 'c-001',
+      title: 'Annual Contract Review',
+      description: 'Comprehensive annual review of contract performance, financial status, and strategic planning',
+      type: 'review',
+      dueDate: '2025-12-31',
+      status: 'pending',
+      assignedTo: 'John Smith',
+      documents: ['Annual_Review_Template.docx', 'Financial_Summary.xlsx', 'Strategic_Plan_2026.pdf'],
+      notes: 'Major deliverable requiring COR and Contracting Officer participation',
+      priority: 'critical',
+      progress: 0,
+      dependencies: ['d-001', 'd-002', 'd-004'],
+      stakeholders: ['COR', 'Contracting Officer', 'Program Manager'],
+      riskLevel: 'high',
+      approvalRequired: true
+    }),
+    createDeliverable({
+      id: 'd-006',
+      contractId: 'c-001',
+      title: 'Equipment Maintenance Log',
+      description: 'Detailed maintenance logs for all HVAC equipment including preventive and corrective maintenance',
+      type: 'report',
+      dueDate: '2025-08-15',
+      status: 'completed',
+      assignedTo: 'Mike Davis',
+      documents: ['Maintenance_Log_July_2025.xlsx', 'Equipment_Inventory.pdf', 'Maintenance_Schedule.pdf'],
+      notes: 'Completed on time with 100% compliance rate',
+      priority: 'medium',
+      progress: 100,
+      stakeholders: ['COR', 'Maintenance Manager'],
+      qualityScore: 95,
+      approvedBy: 'Sarah Johnson',
+      approvedDate: '2025-08-15',
+      metrics: {
+        onTimeDelivery: true,
+        qualityCompliance: true,
+        costPerformance: true,
+        stakeholderSatisfaction: 4.8
+      }
+    }),
+    createDeliverable({
+      id: 'd-007',
+      contractId: 'c-001',
+      title: 'Environmental Compliance Report',
+      description: 'Quarterly environmental compliance report for refrigerant handling and disposal',
+      type: 'report',
+      dueDate: '2025-10-31',
+      status: 'pending',
+      assignedTo: 'Jennifer Garcia',
+      documents: ['Environmental_Compliance_Guide.pdf', 'Refrigerant_Handling_Procedures.docx'],
+      notes: 'Requires EPA compliance verification and base environmental officer review',
+      priority: 'high',
+      progress: 0,
+      stakeholders: ['Environmental Officer', 'COR', 'EPA Representative'],
+      riskLevel: 'high',
+      approvalRequired: true
+    }),
+    createDeliverable({
+      id: 'd-008',
+      contractId: 'c-001',
+      title: 'Training Program Completion',
+      description: 'Completion of required training programs for all personnel on new equipment and procedures',
+      type: 'milestone',
+      dueDate: '2025-09-30',
+      status: 'in-progress',
+      assignedTo: 'Amanda Taylor',
+      documents: ['Training_Curriculum.pdf', 'Certification_Records.xlsx', 'Training_Schedule.pdf'],
+      notes: '85% complete - remaining personnel scheduled for next week',
+      priority: 'medium',
+      progress: 85,
+      stakeholders: ['Training Manager', 'COR'],
+      riskLevel: 'low'
+    }),
+    createDeliverable({
+      id: 'd-009',
+      contractId: 'c-001',
+      title: 'Cost Performance Report',
+      description: 'Monthly cost performance report including budget variance analysis and forecasting',
+      type: 'report',
+      dueDate: '2025-08-31',
+      status: 'overdue',
+      assignedTo: 'David Miller',
+      documents: ['Cost_Report_Template.xlsx', 'Budget_Variance_Analysis.pdf'],
+      notes: 'Overdue by 3 days - requires immediate attention and COR notification',
+      priority: 'critical',
+      progress: 40,
+      stakeholders: ['COR', 'Financial Manager'],
+      riskLevel: 'critical',
+      automation: {
+        autoReminders: true,
+        autoEscalation: true,
+        autoApproval: false,
+        integrationPoints: ['ERP', 'Financial System']
+      }
+    }),
+    createDeliverable({
+      id: 'd-010',
+      contractId: 'c-001',
+      title: 'Emergency Response Plan Update',
+      description: 'Annual update to emergency response procedures for HVAC system failures',
+      type: 'milestone',
+      dueDate: '2025-11-15',
+      status: 'pending',
+      assignedTo: 'Christopher Lee',
+      documents: ['Emergency_Response_Plan_2024.pdf', 'Update_Requirements.docx'],
+      notes: 'Coordinate with base emergency management for approval',
+      priority: 'high',
+      progress: 0,
+      stakeholders: ['Emergency Manager', 'COR', 'Base Emergency Management'],
+      riskLevel: 'high',
+      approvalRequired: true
+    })
   ])
 
   const [subcontractors] = useState<Subcontractor[]>([
@@ -656,6 +1028,242 @@ export default function ContractWorkspacePage() {
     </div>
   )
 
+  const renderDeliverablesTab = () => {
+    const filteredDeliverables = deliverables.filter(deliverable => {
+      const matchesSearch = deliverable.title.toLowerCase().includes(deliverableSearch.toLowerCase()) ||
+                           deliverable.assignedTo.toLowerCase().includes(deliverableSearch.toLowerCase())
+      const matchesFilter = deliverableFilter === 'all' || deliverable.status === deliverableFilter
+      return matchesSearch && matchesFilter
+    })
+
+    const overdueDeliverables = deliverables.filter(d => d.status === 'overdue')
+    const criticalDeliverables = deliverables.filter(d => d.priority === 'critical')
+    const completedDeliverables = deliverables.filter(d => d.status === 'completed')
+
+    return (
+      <div className="space-y-6">
+        {/* Spirit AI Deliverable Analysis */}
+        <Card className="card-premium p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <Brain className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Spirit AI Deliverable Intelligence</h3>
+                <p className="text-sm text-gray-600">Real-time deliverable performance and risk analysis</p>
+              </div>
+            </div>
+            <Button className="btn-premium">
+              <Sparkles className="h-4 w-4 mr-2" />
+              Run Analysis
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-600 font-medium">Overdue</p>
+                  <p className="text-2xl font-bold text-red-700">{overdueDeliverables.length}</p>
+                </div>
+                <AlertTriangle className="h-8 w-8 text-red-500" />
+              </div>
+            </div>
+            <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-orange-600 font-medium">Critical</p>
+                  <p className="text-2xl font-bold text-orange-700">{criticalDeliverables.length}</p>
+                </div>
+                <Target className="h-8 w-8 text-orange-500" />
+              </div>
+            </div>
+            <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-green-600 font-medium">Completed</p>
+                  <p className="text-2xl font-bold text-green-700">{completedDeliverables.length}</p>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+            </div>
+            <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-600 font-medium">On Track</p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    {deliverables.filter(d => d.status === 'in-progress' && d.progress > 50).length}
+                  </p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-blue-500" />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Search and Filter */}
+        <Card className="card-premium p-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search deliverables..."
+                  value={deliverableSearch}
+                  onChange={(e) => setDeliverableSearch(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <select 
+                value={deliverableFilter}
+                onChange={(e) => setDeliverableFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="overdue">Overdue</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button variant="outline" className="btn-ghost-premium">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <Button className="btn-premium">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Deliverable
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Deliverables Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {filteredDeliverables.map((deliverable) => (
+            <Card key={deliverable.id} className="card-premium p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <h4 className="font-semibold text-gray-900">{deliverable.title}</h4>
+                    <Badge variant={
+                      deliverable.priority === 'critical' ? 'destructive' :
+                      deliverable.priority === 'high' ? 'default' :
+                      deliverable.priority === 'medium' ? 'secondary' : 'outline'
+                    } className="text-xs">
+                      {deliverable.priority.toUpperCase()}
+                    </Badge>
+                    <Badge variant={
+                      deliverable.status === 'completed' ? 'default' :
+                      deliverable.status === 'overdue' ? 'destructive' :
+                      deliverable.status === 'in-progress' ? 'secondary' : 'outline'
+                    } className="text-xs">
+                      {deliverable.status.toUpperCase()}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">{deliverable.description}</p>
+                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                    <span>Assigned: {deliverable.assignedTo}</span>
+                    <span>Due: {deliverable.dueDate}</span>
+                    <span>Type: {deliverable.type}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress and Metrics */}
+              <div className="space-y-3 mb-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Progress</span>
+                  <span className="font-semibold">{deliverable.progress}%</span>
+                </div>
+                <Progress value={deliverable.progress} className="h-2" />
+                
+                {deliverable.qualityScore && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-600">Quality Score</span>
+                    <span className={`font-semibold ${
+                      deliverable.qualityScore >= 90 ? 'text-green-600' :
+                      deliverable.qualityScore >= 80 ? 'text-yellow-600' : 'text-red-600'
+                    }`}>
+                      {deliverable.qualityScore}%
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Risk and Stakeholders */}
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Risk Level</span>
+                  <Badge variant={
+                    deliverable.riskLevel === 'critical' ? 'destructive' :
+                    deliverable.riskLevel === 'high' ? 'default' :
+                    deliverable.riskLevel === 'medium' ? 'secondary' : 'outline'
+                  } className="text-xs">
+                    {deliverable.riskLevel.toUpperCase()}
+                  </Badge>
+                </div>
+                <div className="text-xs text-gray-500">
+                  <span className="font-medium">Stakeholders:</span> {deliverable.stakeholders.join(', ')}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedDeliverable(deliverable.id)
+                    setShowDeliverableModal(true)
+                  }}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  View Details
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-1" />
+                  Upload
+                </Button>
+                <Button variant="outline" size="sm">
+                  <MessageSquare className="h-4 w-4 mr-1" />
+                  Comments
+                </Button>
+              </div>
+
+              {/* Automation Indicators */}
+              {deliverable.automation.autoReminders && (
+                <div className="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-700">
+                  🔔 Auto-reminders enabled • {deliverable.automation.integrationPoints.length} integrations
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+
+        {/* No Results */}
+        {filteredDeliverables.length === 0 && (
+          <Card className="card-premium p-12 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No deliverables found</h3>
+            <p className="text-gray-600 mb-4">Try adjusting your search or filter criteria</p>
+            <Button className="btn-premium">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Your First Deliverable
+            </Button>
+          </Card>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="gradient-bg-primary min-h-screen">
       <div className="container-responsive py-6 space-y-6">
@@ -746,6 +1354,10 @@ export default function ContractWorkspacePage() {
 
           <TabsContent value="modifications" className="space-y-6">
             {renderModificationsTab()}
+          </TabsContent>
+
+          <TabsContent value="deliverables" className="space-y-6">
+            {renderDeliverablesTab()}
           </TabsContent>
 
           {/* Add other tab contents here */}
