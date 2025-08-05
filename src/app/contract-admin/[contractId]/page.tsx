@@ -51,7 +51,8 @@ import {
   Network,
   Server,
   Cloud,
-  ListTodo
+  ListTodo,
+  X
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -1936,6 +1937,273 @@ export default function ContractWorkspacePage() {
     )
   }
 
+  // Task Management Modal
+  const renderTaskModal = () => {
+    if (!selectedDeliverable) return null
+    
+    const deliverable = deliverables.find(d => d.id === selectedDeliverable)
+    if (!deliverable) return null
+
+    const tasks = deliverable.tasks || []
+    const filteredTasks = tasks.filter(task => {
+      if (taskFilter === 'all') return true
+      return task.status === taskFilter
+    })
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between p-6 border-b">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">Task Manager</h2>
+              <p className="text-gray-600">{deliverable.title}</p>
+            </div>
+            <div className="flex items-center space-x-3">
+              <select 
+                value={taskFilter}
+                onChange={(e) => setTaskFilter(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Tasks</option>
+                <option value="unassigned">Unassigned</option>
+                <option value="assigned">Assigned</option>
+                <option value="in-progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="overdue">Overdue</option>
+                <option value="blocked">Blocked</option>
+              </select>
+              <Button className="btn-premium">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Task
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowTaskModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Task Statistics */}
+          <div className="p-6 bg-gray-50 border-b">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{tasks.length}</div>
+                <div className="text-sm text-gray-600">Total Tasks</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {tasks.filter(t => t.status === 'completed').length}
+                </div>
+                <div className="text-sm text-gray-600">Completed</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {tasks.filter(t => t.status === 'in-progress').length}
+                </div>
+                <div className="text-sm text-gray-600">In Progress</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {tasks.filter(t => t.status === 'unassigned').length}
+                </div>
+                <div className="text-sm text-gray-600">Unassigned</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Task List */}
+          <div className="flex-1 overflow-auto">
+            <div className="p-6">
+              {filteredTasks.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <ListTodo className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No tasks found</h3>
+                  <p className="text-gray-600 mb-4">Create your first task to get started</p>
+                  <Button className="btn-premium">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Task
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredTasks.map((task) => (
+                    <div key={task.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              task.status === 'completed' ? 'bg-green-500' :
+                              task.status === 'in-progress' ? 'bg-blue-500' :
+                              task.status === 'unassigned' ? 'bg-gray-400' : 'bg-red-500'
+                            }`} />
+                            <h3 className="font-semibold text-gray-900">{task.title}</h3>
+                            <Badge variant={
+                              task.priority === 'critical' ? 'destructive' :
+                              task.priority === 'high' ? 'default' :
+                              task.priority === 'medium' ? 'secondary' : 'outline'
+                            } className="text-xs">
+                              {task.priority.toUpperCase()}
+                            </Badge>
+                            <Badge variant={
+                              task.status === 'completed' ? 'default' :
+                              task.status === 'overdue' ? 'destructive' :
+                              task.status === 'in-progress' ? 'secondary' : 'outline'
+                            } className="text-xs">
+                              {task.status.toUpperCase()}
+                            </Badge>
+                          </div>
+                          
+                          <p className="text-sm text-gray-600 mb-3">{task.description}</p>
+                          
+                          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-500">Assignee:</span>
+                              <p className="font-medium">
+                                {task.assignee ? task.assignee.name : 'Unassigned'}
+                              </p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Due Date:</span>
+                              <p className="font-medium">{task.dueDate}</p>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Progress:</span>
+                              <div className="flex items-center space-x-2">
+                                <Progress value={task.progress} className="h-2 flex-1" />
+                                <span className="text-xs">{task.progress}%</span>
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-gray-500">Hours:</span>
+                              <p className="font-medium">
+                                {task.actualHours || 0}/{task.estimatedHours} hrs
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Tags */}
+                          {task.tags.length > 0 && (
+                            <div className="flex items-center space-x-2 mt-3">
+                              <span className="text-xs text-gray-500">Tags:</span>
+                              {task.tags.map((tag, index) => (
+                                <Badge key={index} variant="outline" className="text-xs">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Quality Checklist */}
+                          {task.qualityChecklist.length > 0 && (
+                            <div className="mt-3">
+                              <span className="text-xs text-gray-500">Quality Checklist:</span>
+                              <div className="mt-1 space-y-1">
+                                {task.qualityChecklist.slice(0, 3).map((item, index) => (
+                                  <div key={index} className="flex items-center space-x-2 text-xs">
+                                    {item.completed ? (
+                                      <CheckSquare className="h-3 w-3 text-green-500" />
+                                    ) : (
+                                      <Square className="h-3 w-3 text-gray-400" />
+                                    )}
+                                    <span className={item.completed ? 'text-green-700' : 'text-gray-600'}>
+                                      {item.item}
+                                    </span>
+                                  </div>
+                                ))}
+                                {task.qualityChecklist.length > 3 && (
+                                  <div className="text-xs text-blue-600">
+                                    +{task.qualityChecklist.length - 3} more items
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-col space-y-2 ml-4">
+                          {!task.assignee && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => assignTask(task.id, 'user-001')}
+                            >
+                              <Users className="h-4 w-4 mr-1" />
+                              Assign
+                            </Button>
+                          )}
+                          
+                          {!task.calendarEvent && (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => addToCalendar(task.id, 'outlook')}
+                            >
+                              <Calendar className="h-4 w-4 mr-1" />
+                              Add to Calendar
+                            </Button>
+                          )}
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => updateTaskProgress(task.id, Math.min(task.progress + 25, 100))}
+                          >
+                            <TrendingUp className="h-4 w-4 mr-1" />
+                            Update Progress
+                          </Button>
+                          
+                          <Button variant="outline" size="sm">
+                            <MessageSquare className="h-4 w-4 mr-1" />
+                            Comments
+                          </Button>
+                          
+                          <Button variant="outline" size="sm">
+                            <Upload className="h-4 w-4 mr-1" />
+                            Upload
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* Calendar Integration Indicator */}
+                      {task.calendarEvent && (
+                        <div className="mt-3 p-2 bg-blue-50 rounded border-l-4 border-blue-400">
+                          <div className="flex items-center space-x-2 text-xs text-blue-700">
+                            <Calendar className="h-3 w-3" />
+                            <span>Added to {task.calendarEvent.calendar} calendar</span>
+                            <span>• {task.calendarEvent.startTime.split('T')[0]}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Time Tracking */}
+                      {task.timeTracking.totalTime > 0 && (
+                        <div className="mt-3 p-2 bg-green-50 rounded border-l-4 border-green-400">
+                          <div className="flex items-center space-x-2 text-xs text-green-700">
+                            <Clock className="h-3 w-3" />
+                            <span>Time tracked: {task.timeTracking.totalTime}h</span>
+                            {task.timeTracking.breaks > 0 && (
+                              <span>• {task.timeTracking.breaks}h breaks</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="gradient-bg-primary min-h-screen">
       <div className="container-responsive py-6 space-y-6">
@@ -2034,6 +2302,9 @@ export default function ContractWorkspacePage() {
 
           {/* Add other tab contents here */}
         </Tabs>
+
+        {/* Task Management Modal */}
+        {showTaskModal && renderTaskModal()}
       </div>
     </div>
   )
