@@ -495,12 +495,15 @@ export default function RFPWorkspacePage() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="flex w-full bg-gray-100 p-1 rounded-lg">
-            <TabsTrigger value="overview" className="flex-1">Overview</TabsTrigger>
-            <TabsTrigger value="documents" className="flex-1">Documents</TabsTrigger>
-            <TabsTrigger value="tasks" className="flex-1">Tasks</TabsTrigger>
-            <TabsTrigger value="team" className="flex-1">Team</TabsTrigger>
-            <TabsTrigger value="comments" className="flex-1">Comments</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-8 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger value="overview" className="text-xs">Overview</TabsTrigger>
+            <TabsTrigger value="evaluation" className="text-xs">Evaluation</TabsTrigger>
+            <TabsTrigger value="instructions" className="text-xs">Instructions</TabsTrigger>
+            <TabsTrigger value="pws" className="text-xs">PWS/SOW</TabsTrigger>
+            <TabsTrigger value="team" className="text-xs">Team</TabsTrigger>
+            <TabsTrigger value="subcontractors" className="text-xs">Subcontractors</TabsTrigger>
+            <TabsTrigger value="pricing" className="text-xs">Pricing</TabsTrigger>
+            <TabsTrigger value="proposal" className="text-xs">Proposal</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -545,82 +548,407 @@ export default function RFPWorkspacePage() {
             </div>
           </TabsContent>
 
-          <TabsContent value="documents" className="space-y-6">
-            {/* Search and Filters */}
-            <Card className="card-premium p-4">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search documents..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
-                    />
-                    <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <TabsContent value="evaluation" className="space-y-6">
+            <Card className="card-premium p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Evaluation Factors for Award</h3>
+                <Badge className="bg-blue-100 text-blue-800">Step 1 of 8</Badge>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Award Type */}
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-gray-900 mb-3">Award Type</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-3 bg-white rounded-lg border border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-gray-900">Best Value Tradeoff</span>
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      </div>
+                      <p className="text-sm text-gray-600">Technical factors more important than price</p>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-medium text-gray-600">LPTA</span>
+                        <Clock className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-gray-500">Lowest price technically acceptable</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Evaluation Criteria */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900">Evaluation Criteria</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-4 border-l-4 border-l-blue-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">Technical Approach</h5>
+                        <Badge className="bg-blue-100 text-blue-800">40%</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">Methodology, innovation, and technical solution</p>
+                    </Card>
+                    
+                    <Card className="p-4 border-l-4 border-l-green-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">Past Performance</h5>
+                        <Badge className="bg-green-100 text-green-800">30%</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">Relevant experience and performance history</p>
+                    </Card>
+                    
+                    <Card className="p-4 border-l-4 border-l-orange-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">Price</h5>
+                        <Badge className="bg-orange-100 text-orange-800">30%</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600">Total evaluated price and cost realism</p>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Key Insights */}
+                <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+                  <h4 className="font-semibold text-gray-900 mb-3">Spirit AI Insights</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                      <p className="text-sm text-gray-700">Best Value Tradeoff requires detailed technical narrative and strong past performance</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                      <p className="text-sm text-gray-700">Technical approach should emphasize innovation and methodology over cost</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                      <p className="text-sm text-gray-700">Past performance examples should be highly relevant to this scope</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </Card>
-
-            {/* Documents Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredDocuments.map((document) => (
-                <DocumentCard key={document.id} document={document} />
-              ))}
-            </div>
           </TabsContent>
 
-          <TabsContent value="tasks" className="space-y-6">
-            {/* Search and Filters */}
-            <Card className="card-premium p-4">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search tasks..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
-                    />
-                    <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <TabsContent value="instructions" className="space-y-6">
+            <Card className="card-premium p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Instructions to Offerors</h3>
+                <Badge className="bg-green-100 text-green-800">Step 2 of 8</Badge>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Submission Requirements */}
+                <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+                  <h4 className="font-semibold text-gray-900 mb-3">Submission Requirements</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Format: PDF</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Page Limit: 50 pages</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Font: 12pt Arial</span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Submission: SAM.gov</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Deadline: {workspace.dueDate}</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <span className="text-sm font-medium text-gray-900">Time Zone: EST</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Proposal Structure */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900">Required Sections</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card className="p-4 border-l-4 border-l-blue-500">
+                      <h5 className="font-medium text-gray-900 mb-2">Technical Volume (30 pages)</h5>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Executive Summary</li>
+                        <li>• Technical Approach</li>
+                        <li>• Management Plan</li>
+                        <li>• Past Performance</li>
+                      </ul>
+                    </Card>
+                    
+                    <Card className="p-4 border-l-4 border-l-orange-500">
+                      <h5 className="font-medium text-gray-900 mb-2">Price Volume (20 pages)</h5>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        <li>• Price Proposal</li>
+                        <li>• Cost Breakdown</li>
+                        <li>• Supporting Documentation</li>
+                        <li>• Certifications</li>
+                      </ul>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Compliance Checklist */}
+                <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                  <h4 className="font-semibold text-gray-900 mb-3">Compliance Checklist</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm text-gray-700">SF1449 completed</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm text-gray-700">SAM.gov registration active</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm text-gray-700">DUNS number verified</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm text-gray-700">CAGE code current</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm text-gray-700">Reps & Certs completed</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-600" />
+                        <span className="text-sm text-gray-700">Financial statements included</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </Card>
+          </TabsContent>
 
-            {/* Tasks Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredTasks.map((task) => (
-                <TaskCard key={task.id} task={task} />
-              ))}
-            </div>
+          <TabsContent value="pws" className="space-y-6">
+            <Card className="card-premium p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Performance Work Statement (PWS)</h3>
+                <Badge className="bg-purple-100 text-purple-800">Step 3 of 8</Badge>
+              </div>
+              
+              <div className="space-y-6">
+                {/* Scope Overview */}
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                  <h4 className="font-semibold text-gray-900 mb-3">Scope Overview</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="text-center p-3 bg-white rounded-lg border border-purple-200">
+                      <div className="text-2xl font-bold text-purple-600 mb-1">12</div>
+                      <div className="text-sm text-gray-600">Major Tasks</div>
+                    </div>
+                    <div className="text-center p-3 bg-white rounded-lg border border-purple-200">
+                      <div className="text-2xl font-bold text-blue-600 mb-1">24</div>
+                      <div className="text-sm text-gray-600">Deliverables</div>
+                    </div>
+                    <div className="text-center p-3 bg-white rounded-lg border border-purple-200">
+                      <div className="text-2xl font-bold text-green-600 mb-1">18</div>
+                      <div className="text-sm text-gray-600">Months</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CLIN Structure */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-900">Contract Line Item Numbers (CLINs)</h4>
+                  <div className="space-y-3">
+                    <Card className="p-4 border-l-4 border-l-blue-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">CLIN 0001: Base Period</h5>
+                        <Badge className="bg-blue-100 text-blue-800">$2.1M</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">HVAC system installation and commissioning for Building A</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-xs">Equipment Installation</Badge>
+                        <Badge variant="outline" className="text-xs">Testing & Commissioning</Badge>
+                        <Badge variant="outline" className="text-xs">Documentation</Badge>
+                      </div>
+                    </Card>
+                    
+                    <Card className="p-4 border-l-4 border-l-green-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">CLIN 0002: Option Period 1</h5>
+                        <Badge className="bg-green-100 text-green-800">$1.8M</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">HVAC system installation for Building B</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-xs">Equipment Installation</Badge>
+                        <Badge variant="outline" className="text-xs">Testing & Commissioning</Badge>
+                        <Badge variant="outline" className="text-xs">Training</Badge>
+                      </div>
+                    </Card>
+                    
+                    <Card className="p-4 border-l-4 border-l-orange-500">
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">CLIN 0003: Option Period 2</h5>
+                        <Badge className="bg-orange-100 text-orange-800">$1.5M</Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">HVAC system installation for Building C</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-xs">Equipment Installation</Badge>
+                        <Badge variant="outline" className="text-xs">Testing & Commissioning</Badge>
+                        <Badge variant="outline" className="text-xs">Warranty</Badge>
+                      </div>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Key Requirements */}
+                <div className="p-4 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+                  <h4 className="font-semibold text-gray-900 mb-3">Key Requirements</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Safety Officer Certification</p>
+                          <p className="text-xs text-gray-600">OSHA 30-hour certification required</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Construction Manager</p>
+                          <p className="text-xs text-gray-600">PMP certification and 10+ years experience</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Equipment Standards</p>
+                          <p className="text-xs text-gray-600">ASHRAE 90.1 compliance required</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start space-x-3">
+                        <div className="w-2 h-2 bg-orange-500 rounded-full mt-2"></div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Quality Control</p>
+                          <p className="text-xs text-gray-600">ISO 9001 quality management system</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Spirit AI Analysis */}
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-200">
+                  <h4 className="font-semibold text-gray-900 mb-3">Spirit AI Scope Analysis</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                      <p className="text-sm text-gray-700">Scope requires 3 specialized subcontractors: HVAC, Electrical, and Controls</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                      <p className="text-sm text-gray-700">Critical gaps identified: Safety Officer and Construction Manager roles</p>
+                    </div>
+                    <div className="flex items-start space-x-3">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                      <p className="text-sm text-gray-700">Recommended team size: 8-12 personnel across all phases</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </TabsContent>
 
           <TabsContent value="team" className="space-y-6">
             <Card className="card-premium p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Collaboration</h3>
-              <p className="text-gray-600">Team collaboration tools and communication features coming soon...</p>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Team Assembly</h3>
+                <Badge className="bg-blue-100 text-blue-800">Step 4 of 8</Badge>
+              </div>
+              
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Users className="h-8 w-8 text-blue-600" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Team Assembly & Gap Analysis</h4>
+                <p className="text-gray-600 mb-6">Based on PWS requirements, identify team gaps and assemble your core team</p>
+                <Button className="btn-premium" onClick={() => window.location.href = '/rfp/workspace/team-assembly'}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Go to Team Assembly
+                </Button>
+              </div>
             </Card>
           </TabsContent>
 
-          <TabsContent value="comments" className="space-y-6">
+          <TabsContent value="subcontractors" className="space-y-6">
             <Card className="card-premium p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Comments & Discussions</h3>
-              <div className="space-y-4">
-                {workspace.comments.map((comment) => (
-                  <div key={comment.id} className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900">{comment.author}</span>
-                      <span className="text-sm text-gray-500">
-                        {new Date(comment.timestamp).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-gray-600">{comment.content}</p>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Subcontractor Management</h3>
+                <Badge className="bg-green-100 text-green-800">Step 5 of 8</Badge>
+              </div>
+              
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Target className="h-8 w-8 text-green-600" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Subcontractor Selection & Management</h4>
+                <p className="text-gray-600 mb-6">Assign PWS scope to subcontractors, review bids, and manage pricing</p>
+                <Button className="btn-premium" onClick={() => window.location.href = '/rfp/workspace/subcontractors'}>
+                  <Target className="h-4 w-4 mr-2" />
+                  Go to Subcontractors
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-6">
+            <Card className="card-premium p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Pricing Analysis</h3>
+                <Badge className="bg-orange-100 text-orange-800">Step 6 of 8</Badge>
+              </div>
+              
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <DollarSign className="h-8 w-8 text-orange-600" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Cost Analysis & Pricing Strategy</h4>
+                <p className="text-gray-600 mb-6">Analyze costs, develop pricing strategy, and ensure competitiveness</p>
+                <Button className="btn-premium" onClick={() => window.location.href = '/rfp/workspace/pricing'}>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Go to Pricing
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="proposal" className="space-y-6">
+            <Card className="card-premium p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Proposal Builder</h3>
+                <Badge className="bg-purple-100 text-purple-800">Step 7 of 8</Badge>
+              </div>
+              
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <FileText className="h-8 w-8 text-purple-600" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Proposal Development</h4>
+                <p className="text-gray-600 mb-6">Build technical and price volumes based on team and subcontractor data</p>
+                <Button className="btn-premium" onClick={() => window.location.href = '/rfp/workspace/proposal-builder'}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Go to Proposal Builder
+                </Button>
               </div>
             </Card>
           </TabsContent>
