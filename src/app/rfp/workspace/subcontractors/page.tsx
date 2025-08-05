@@ -259,6 +259,28 @@ export default function SubcontractorManagementPage() {
   const [selectedSubcontractor, setSelectedSubcontractor] = useState<string | null>(null)
   const [showSpiritAnalysis, setShowSpiritAnalysis] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
+  
+  // CRUD Modal States
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [editingSubcontractor, setEditingSubcontractor] = useState<Subcontractor | null>(null)
+  const [deletingSubcontractor, setDeletingSubcontractor] = useState<Subcontractor | null>(null)
+  
+  // Form States
+  const [formData, setFormData] = useState({
+    name: '',
+    type: '',
+    specialties: [] as string[],
+    location: '',
+    contactName: '',
+    contactEmail: '',
+    contactPhone: '',
+    certifications: [] as string[],
+    hourlyRate: 0,
+    overhead: 0,
+    profit: 0
+  })
 
   const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([
     {
@@ -450,6 +472,172 @@ export default function SubcontractorManagementPage() {
     (complianceChecks.filter(check => check.status === 'pass').length / complianceChecks.length) * 100
   )
 
+  // CRUD Functions
+  const handleAddSubcontractor = () => {
+    setFormData({
+      name: '',
+      type: '',
+      specialties: [],
+      location: '',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      certifications: [],
+      hourlyRate: 0,
+      overhead: 0,
+      profit: 0
+    })
+    setShowAddModal(true)
+  }
+
+  const handleEditSubcontractor = (subcontractor: Subcontractor) => {
+    setEditingSubcontractor(subcontractor)
+    setFormData({
+      name: subcontractor.name,
+      type: subcontractor.type,
+      specialties: subcontractor.specialties,
+      location: subcontractor.location,
+      contactName: subcontractor.contact.name,
+      contactEmail: subcontractor.contact.email,
+      contactPhone: subcontractor.contact.phone,
+      certifications: subcontractor.certifications,
+      hourlyRate: subcontractor.pricing.hourlyRate,
+      overhead: subcontractor.pricing.overhead,
+      profit: subcontractor.pricing.profit
+    })
+    setShowEditModal(true)
+  }
+
+  const handleDeleteSubcontractor = (subcontractor: Subcontractor) => {
+    setDeletingSubcontractor(subcontractor)
+    setShowDeleteModal(true)
+  }
+
+  const saveSubcontractor = () => {
+    if (editingSubcontractor) {
+      // Update existing subcontractor
+      setSubcontractors(prev => prev.map(sub => 
+        sub.id === editingSubcontractor.id 
+          ? {
+              ...sub,
+              name: formData.name,
+              type: formData.type,
+              specialties: formData.specialties,
+              location: formData.location,
+              contact: {
+                name: formData.contactName,
+                email: formData.contactEmail,
+                phone: formData.contactPhone
+              },
+              certifications: formData.certifications,
+              pricing: {
+                ...sub.pricing,
+                hourlyRate: formData.hourlyRate,
+                overhead: formData.overhead,
+                profit: formData.profit,
+                total: formData.hourlyRate * (1 + formData.overhead/100) * (1 + formData.profit/100),
+                markup: formData.overhead + formData.profit
+              }
+            }
+          : sub
+      ))
+      setShowEditModal(false)
+      setEditingSubcontractor(null)
+    } else {
+      // Add new subcontractor
+      const newSubcontractor: Subcontractor = {
+        id: `sub${Date.now()}`,
+        name: formData.name,
+        type: formData.type,
+        specialties: formData.specialties,
+        pastPerformance: 4.5,
+        priceCompetitiveness: 80,
+        availability: 'high' as const,
+        certifications: formData.certifications,
+        location: formData.location,
+        contact: {
+          name: formData.contactName,
+          email: formData.contactEmail,
+          phone: formData.contactPhone
+        },
+        matchScore: 85,
+        status: 'pending' as const,
+        compliance: {
+          loi: 'pending' as const,
+          wdAlignment: 'pending' as const,
+          coi: 'active' as const,
+          licenses: 'valid' as const,
+          debarment: 'clear' as const
+        },
+        pricing: {
+          hourlyRate: formData.hourlyRate,
+          overhead: formData.overhead,
+          profit: formData.profit,
+          total: formData.hourlyRate * (1 + formData.overhead/100) * (1 + formData.profit/100),
+          markup: formData.overhead + formData.profit
+        },
+        readiness: 70,
+        riskFactors: ['New subcontractor - needs evaluation'],
+        recommendations: ['Complete compliance check', 'Verify certifications']
+      }
+      setSubcontractors(prev => [...prev, newSubcontractor])
+      setShowAddModal(false)
+    }
+    setFormData({
+      name: '',
+      type: '',
+      specialties: [],
+      location: '',
+      contactName: '',
+      contactEmail: '',
+      contactPhone: '',
+      certifications: [],
+      hourlyRate: 0,
+      overhead: 0,
+      profit: 0
+    })
+  }
+
+  const confirmDelete = () => {
+    if (deletingSubcontractor) {
+      setSubcontractors(prev => prev.filter(sub => sub.id !== deletingSubcontractor.id))
+      setShowDeleteModal(false)
+      setDeletingSubcontractor(null)
+    }
+  }
+
+  const addSpecialty = (specialty: string) => {
+    if (specialty && !formData.specialties.includes(specialty)) {
+      setFormData(prev => ({
+        ...prev,
+        specialties: [...prev.specialties, specialty]
+      }))
+    }
+  }
+
+  const removeSpecialty = (specialty: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specialties: prev.specialties.filter(s => s !== specialty)
+    }))
+  }
+
+  const addCertification = (certification: string) => {
+    if (certification && !formData.certifications.includes(certification)) {
+      setFormData(prev => ({
+        ...prev,
+        certifications: [...prev.certifications, certification]
+      }))
+    }
+  }
+
+  const removeCertification = (certification: string) => {
+    setFormData(prev => ({
+      ...prev,
+      certifications: prev.certifications.filter(c => c !== certification)
+    }))
+  }
+
   const renderOverviewTab = () => (
     <div className="space-y-6">
       {/* Compliance Check Summary */}
@@ -487,7 +675,16 @@ export default function SubcontractorManagementPage() {
 
       {/* Subcontractor Compliance Table */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Subcontractor Compliance Matrix</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Subcontractor Compliance Matrix</h3>
+          <Button 
+            onClick={handleAddSubcontractor}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Subcontractor
+          </Button>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -555,10 +752,29 @@ export default function SubcontractorManagementPage() {
                   <td className="py-3">
                     <div className="flex space-x-2">
                       <Button size="sm" variant="outline" onClick={() => setSelectedSubcontractor(sub.id)}>
+                        <Eye className="h-3 w-3 mr-1" />
                         Review
                       </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleEditSubcontractor(sub)}
+                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => handleDeleteSubcontractor(sub)}
+                        className="border-red-200 text-red-700 hover:bg-red-50"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
                       {sub.status === 'pending' && (
-                        <Button size="sm">
+                        <Button size="sm" className="bg-yellow-600 hover:bg-yellow-700">
                           Request Update
                         </Button>
                       )}
@@ -880,6 +1096,421 @@ export default function SubcontractorManagementPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Subcontractor Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Add New Subcontractor</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAddModal(false)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter company name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                  <Input
+                    value={formData.type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                    placeholder="e.g., 8(a) Small Business"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <Input
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="City, State"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contact Name</label>
+                  <Input
+                    value={formData.contactName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+                    placeholder="Primary contact"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                  <Input
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                    placeholder="contact@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+                  <Input
+                    value={formData.contactPhone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Specialties</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.specialties.map((specialty, index) => (
+                      <Badge key={index} className="bg-blue-100 text-blue-800">
+                        {specialty}
+                        <button
+                          onClick={() => removeSpecialty(specialty)}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add specialty"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          addSpecialty((e.target as HTMLInputElement).value)
+                          ;(e.target as HTMLInputElement).value = ''
+                        }
+                      }}
+                    />
+                    <Button size="sm" onClick={() => {
+                      const input = document.querySelector('input[placeholder="Add specialty"]') as HTMLInputElement
+                      if (input) {
+                        addSpecialty(input.value)
+                        input.value = ''
+                      }
+                    }}>
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Certifications</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.certifications.map((cert, index) => (
+                      <Badge key={index} className="bg-green-100 text-green-800">
+                        {cert}
+                        <button
+                          onClick={() => removeCertification(cert)}
+                          className="ml-1 text-green-600 hover:text-green-800"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add certification"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          addCertification((e.target as HTMLInputElement).value)
+                          ;(e.target as HTMLInputElement).value = ''
+                        }
+                      }}
+                    />
+                    <Button size="sm" onClick={() => {
+                      const input = document.querySelector('input[placeholder="Add certification"]') as HTMLInputElement
+                      if (input) {
+                        addCertification(input.value)
+                        input.value = ''
+                      }
+                    }}>
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Hourly Rate ($)</label>
+                  <Input
+                    type="number"
+                    value={formData.hourlyRate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: Number(e.target.value) }))}
+                    placeholder="125"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Overhead (%)</label>
+                  <Input
+                    type="number"
+                    value={formData.overhead}
+                    onChange={(e) => setFormData(prev => ({ ...prev, overhead: Number(e.target.value) }))}
+                    placeholder="15"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Profit (%)</label>
+                  <Input
+                    type="number"
+                    value={formData.profit}
+                    onChange={(e) => setFormData(prev => ({ ...prev, profit: Number(e.target.value) }))}
+                    placeholder="8"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button variant="outline" onClick={() => setShowAddModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={saveSubcontractor} className="bg-blue-600 hover:bg-blue-700">
+                  Add Subcontractor
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Subcontractor Modal */}
+      {showEditModal && editingSubcontractor && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Edit Subcontractor</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowEditModal(false)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Company Name</label>
+                  <Input
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter company name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Business Type</label>
+                  <Input
+                    value={formData.type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value }))}
+                    placeholder="e.g., 8(a) Small Business"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <Input
+                    value={formData.location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                    placeholder="City, State"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contact Name</label>
+                  <Input
+                    value={formData.contactName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactName: e.target.value }))}
+                    placeholder="Primary contact"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                  <Input
+                    type="email"
+                    value={formData.contactEmail}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactEmail: e.target.value }))}
+                    placeholder="contact@company.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+                  <Input
+                    value={formData.contactPhone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, contactPhone: e.target.value }))}
+                    placeholder="(555) 123-4567"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Specialties</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.specialties.map((specialty, index) => (
+                      <Badge key={index} className="bg-blue-100 text-blue-800">
+                        {specialty}
+                        <button
+                          onClick={() => removeSpecialty(specialty)}
+                          className="ml-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add specialty"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          addSpecialty((e.target as HTMLInputElement).value)
+                          ;(e.target as HTMLInputElement).value = ''
+                        }
+                      }}
+                    />
+                    <Button size="sm" onClick={() => {
+                      const input = document.querySelector('input[placeholder="Add specialty"]') as HTMLInputElement
+                      if (input) {
+                        addSpecialty(input.value)
+                        input.value = ''
+                      }
+                    }}>
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Certifications</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.certifications.map((cert, index) => (
+                      <Badge key={index} className="bg-green-100 text-green-800">
+                        {cert}
+                        <button
+                          onClick={() => removeCertification(cert)}
+                          className="ml-1 text-green-600 hover:text-green-800"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Add certification"
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          addCertification((e.target as HTMLInputElement).value)
+                          ;(e.target as HTMLInputElement).value = ''
+                        }
+                      }}
+                    />
+                    <Button size="sm" onClick={() => {
+                      const input = document.querySelector('input[placeholder="Add certification"]') as HTMLInputElement
+                      if (input) {
+                        addCertification(input.value)
+                        input.value = ''
+                      }
+                    }}>
+                      Add
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Hourly Rate ($)</label>
+                  <Input
+                    type="number"
+                    value={formData.hourlyRate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, hourlyRate: Number(e.target.value) }))}
+                    placeholder="125"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Overhead (%)</label>
+                  <Input
+                    type="number"
+                    value={formData.overhead}
+                    onChange={(e) => setFormData(prev => ({ ...prev, overhead: Number(e.target.value) }))}
+                    placeholder="15"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Profit (%)</label>
+                  <Input
+                    type="number"
+                    value={formData.profit}
+                    onChange={(e) => setFormData(prev => ({ ...prev, profit: Number(e.target.value) }))}
+                    placeholder="8"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button variant="outline" onClick={() => setShowEditModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={saveSubcontractor} className="bg-green-600 hover:bg-green-700">
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && deletingSubcontractor && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-red-600 to-pink-600 text-white p-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Delete Subcontractor</h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDeleteModal(false)}
+                  className="text-white hover:bg-white/20"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <AlertTriangle className="h-8 w-8 text-red-600 mr-3" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Confirm Deletion</h3>
+                  <p className="text-gray-600">This action cannot be undone.</p>
+                </div>
+              </div>
+              
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-800">
+                  Are you sure you want to delete <strong>{deletingSubcontractor.name}</strong>?
+                </p>
+                <p className="text-red-700 text-sm mt-1">
+                  This will remove all associated data and cannot be recovered.
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button variant="outline" onClick={() => setShowDeleteModal(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+                  Delete Subcontractor
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
