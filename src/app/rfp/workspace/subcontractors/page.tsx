@@ -2009,7 +2009,7 @@ export default function SubcontractorManagementPage() {
                   <input
                     type="checkbox"
                     id={task.id}
-                    checked={task.checked}
+                    defaultChecked={task.checked}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                   <label htmlFor={task.id} className="ml-2 text-sm text-gray-700">
