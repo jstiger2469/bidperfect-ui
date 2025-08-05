@@ -105,11 +105,13 @@ import {
   Target,
   BarChart3,
   DollarSign as DollarSignIcon,
-  Calculator
+  Calculator,
+  ArrowUp
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useBidStore, Subcontractor } from '@/app/shared/stores/useBidStore'
 import { useSearchParams } from 'next/navigation'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 interface ComplianceCheck {
   id: string
@@ -1752,237 +1754,210 @@ export default function SubcontractorManagementPage() {
 
   const renderBidReviewTab = () => (
     <div className="space-y-6">
-      {/* Bid Review Header */}
-      <Card className="p-6 bg-gradient-to-r from-orange-50 to-red-50 border-0">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 flex items-center justify-center mr-3">
-              <FileText className="h-4 w-4 text-white" />
+      {/* Bid Review Header with AI Assistant */}
+      <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0">
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start">
+            <div className="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mr-4">
+              <span className="text-white font-bold text-lg">S</span>
             </div>
-            <h3 className="font-semibold text-gray-900">Subcontractor Bid Review</h3>
-          </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-orange-600">
-              {subcontractors.filter(sub => sub.bidStatus === 'submitted').length}
+            <div className="bg-white/80 rounded-lg p-4 border border-blue-200">
+              <p className="text-gray-800 font-medium">
+                "I've lined up potential subs. Who's the best fit to finalize the scope and pricing?"
+              </p>
             </div>
-            <div className="text-sm text-gray-600">Bids to Review</div>
           </div>
+          <Button className="bg-blue-600 hover:bg-blue-700">
+            <Plus className="h-4 w-4 mr-2" />
+            + New Bid
+          </Button>
+        </div>
+        
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Bid Review & Comparison</h2>
+          <p className="text-gray-600">HVAC Replacement at MVA Westminster Branch • Due June 10</p>
         </div>
       </Card>
 
-      {/* Individual Bid Reviews */}
-      {subcontractors.map((subcontractor) => (
-        <Card key={subcontractor.id} className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
-              <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
-                <span className="text-blue-600 font-bold text-lg">{subcontractor.logo}</span>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900">{subcontractor.name}</h4>
-                <p className="text-gray-600">{subcontractor.type} • {subcontractor.location}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <Badge className={
-                subcontractor.bidStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                subcontractor.bidStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                subcontractor.bidStatus === 'submitted' ? 'bg-blue-100 text-blue-800' :
-                'bg-yellow-100 text-yellow-800'
-              }>
-                {subcontractor.bidStatus}
-              </Badge>
-              <div className="text-right">
-                <div className="text-2xl font-bold text-green-600">
-                  ${subcontractor.pricing.proposedAmount.toLocaleString()}
-                </div>
-                <div className="text-sm text-gray-600">Proposed Amount</div>
-              </div>
-            </div>
-          </div>
+      {/* Navigation Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="flex space-x-8">
+          {['Proposals', 'Availability', 'Compliance Matrix', 'Pricing Estimator'].map((tab) => (
+            <button
+              key={tab}
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                tab === 'Proposals' 
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </nav>
+      </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Panel: Detailed Cost Breakdown */}
-            <div>
-              <h5 className="font-medium text-gray-900 mb-4">Detailed Cost Breakdown</h5>
-              
-              {/* Labor & Material Costs */}
-              <div className="mb-6">
-                <h6 className="text-sm font-medium text-gray-700 mb-3">Labor & Material Costs</h6>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-200">
-                        <th className="text-left py-2 font-medium text-gray-700">Description</th>
-                        <th className="text-right py-2 font-medium text-gray-700">Hours</th>
-                        <th className="text-right py-2 font-medium text-gray-700">Rate</th>
-                        <th className="text-right py-2 font-medium text-gray-700">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Object.entries(subcontractor.pricing.laborRates).map(([role, rate]) => (
-                        <tr key={role} className="border-b border-gray-100">
-                          <td className="py-2 text-gray-900">{role}</td>
-                          <td className="py-2 text-right text-gray-600">80</td>
-                          <td className="py-2 text-right text-gray-600">${rate}/hr</td>
-                          <td className="py-2 text-right font-medium text-gray-900">${(80 * rate).toLocaleString()}</td>
-                        </tr>
-                      ))}
-                      <tr className="bg-blue-50">
-                        <td className="py-2 text-gray-900 font-medium">Materials</td>
-                        <td className="py-2 text-right text-gray-600">-</td>
-                        <td className="py-2 text-right text-gray-600">-</td>
-                        <td className="py-2 text-right font-medium text-blue-600">${subcontractor.pricing.materials.toLocaleString()}</td>
-                      </tr>
-                      <tr className="bg-green-50">
-                        <td className="py-2 text-gray-900 font-medium">Total Direct Costs</td>
-                        <td className="py-2 text-right text-gray-600">-</td>
-                        <td className="py-2 text-right text-gray-600">-</td>
-                        <td className="py-2 text-right font-bold text-green-600">
-                          ${(Object.values(subcontractor.pricing.laborRates).reduce((sum, rate) => sum + (80 * rate), 0) + subcontractor.pricing.materials).toLocaleString()}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Fringe Benefits */}
-              <div className="mb-6">
-                <h6 className="text-sm font-medium text-gray-700 mb-3">Fringe Benefits</h6>
-                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
+      {/* Subcontractor Bid Table */}
+      <Card className="p-6">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200">
+                <th className="text-left py-3 font-medium text-gray-700">Subcontractor</th>
+                <th className="text-left py-3 font-medium text-gray-700">Readiness</th>
+                <th className="text-left py-3 font-medium text-gray-700">Markup vs. Estimate</th>
+                <th className="text-left py-3 font-medium text-gray-700">Pricing</th>
+                <th className="text-left py-3 font-medium text-gray-700">Documents</th>
+                <th className="text-left py-3 font-medium text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                {
+                  id: 'coolworks',
+                  name: 'CoolWorks',
+                  location: 'Con Orleans, LA',
+                  readiness: 'Ready',
+                  readinessStatus: 'ready',
+                  markup: '12%',
+                  markupStatus: 'fair',
+                  pricing: 412000,
+                  pricingStatus: 'fair',
+                  documents: [
+                    { name: 'Signed letter of intent', status: 'complete' },
+                    { name: 'Toc doCS missing', status: 'missing' }
+                  ],
+                  hasReviewButton: true
+                },
+                {
+                  id: 'climatepros',
+                  name: 'ClimatePros LLC',
+                  location: 'Baton Rouge, LA',
+                  readiness: 'Missing Certs',
+                  readinessStatus: 'warning',
+                  markup: '25%',
+                  markupStatus: 'high',
+                  pricing: 465000,
+                  pricingStatus: 'high',
+                  documents: [
+                    { name: 'Signed letter of intent', status: 'complete' },
+                    { name: 'Uploaded resume', status: 'complete' }
+                  ],
+                  hasReviewButton: false
+                },
+                {
+                  id: 'bayou',
+                  name: 'Bayou Mechanicla',
+                  location: 'Lafayette, LA',
+                  readiness: 'Ready',
+                  readinessStatus: 'ready',
+                  markup: '5%',
+                  markupStatus: 'low',
+                  pricing: 398200,
+                  pricingStatus: 'low',
+                  documents: [
+                    { name: 'Signed letter of intent', status: 'complete' },
+                    { name: 'Uploaded resume', status: 'complete' }
+                  ],
+                  hasReviewButton: true
+                },
+                {
+                  id: 'delta',
+                  name: 'Delta HVAC Partners',
+                  location: 'Houma, LA',
+                  readiness: 'Ready',
+                  readinessStatus: 'ready',
+                  markup: '10%',
+                  markupStatus: 'fair',
+                  pricing: 415600,
+                  pricingStatus: 'fair',
+                  documents: [
+                    { name: 'Signed letter of commitment', status: 'complete' },
+                    { name: 'Tagged past performance', status: 'complete' }
+                  ],
+                  hasReviewButton: false
+                }
+              ].map((bid) => (
+                <tr key={bid.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <td className="py-4">
+                    <div>
+                      <div className="font-medium text-gray-900">{bid.name}</div>
+                      <div className="text-sm text-gray-600">{bid.location}</div>
+                    </div>
+                  </td>
+                  <td className="py-4">
                     <div className="flex items-center">
-                      <div className="w-4 h-4 bg-blue-500 rounded mr-3"></div>
-                      <span className="text-sm text-gray-700">Cash in lieu of benefits</span>
+                      {bid.readinessStatus === 'ready' ? (
+                        <div className="h-3 w-3 bg-green-500 rounded-full mr-2"></div>
+                      ) : (
+                        <div className="h-3 w-3 bg-orange-500 rounded-full mr-2"></div>
+                      )}
+                      <span className="text-sm text-gray-900">{bid.readiness}</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900">$4.98/hr</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Paid Holidays</span>
-                    <span className="text-sm font-medium text-gray-900">$1,280</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">Vacation</span>
-                    <span className="text-sm font-medium text-gray-900">$750</span>
-                  </div>
-                  <div className="border-t border-gray-200 pt-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">Total Fringe Cost</span>
-                      <span className="text-sm font-bold text-blue-600">$9,990</span>
+                  </td>
+                  <td className="py-4">
+                    <div className="flex items-center">
+                      <div className={`h-3 w-3 rounded-full mr-2 ${
+                        bid.markupStatus === 'low' ? 'bg-green-500' :
+                        bid.markupStatus === 'fair' ? 'bg-green-500' :
+                        'bg-orange-500'
+                      }`}></div>
+                      <span className="text-sm text-gray-900">{bid.markup} {bid.markupStatus}</span>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                  </td>
+                  <td className="py-4">
+                    <div>
+                      <div className="font-medium text-gray-900">${bid.pricing.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600 capitalize">{bid.pricingStatus}</div>
+                    </div>
+                  </td>
+                  <td className="py-4">
+                    <div className="space-y-1">
+                      {bid.documents.map((doc, index) => (
+                        <div key={index} className="flex items-center text-sm">
+                          {doc.status === 'complete' ? (
+                            <FileText className="h-3 w-3 text-green-600 mr-1" />
+                          ) : (
+                            <AlertTriangle className="h-3 w-3 text-orange-600 mr-1" />
+                          )}
+                          <span className={doc.status === 'complete' ? 'text-gray-900' : 'text-orange-600'}>
+                            {doc.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="py-4">
+                    {bid.hasReviewButton && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          // Open subcontractor profile modal
+                          updateTeamAssemblyData(rfpId, { 
+                            showSubcontractorProfile: true, 
+                            selectedSubcontractorId: bid.id 
+                          })
+                        }}
+                      >
+                        Review Bid
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
-            {/* Right Panel: Pricing Analysis & Actions */}
-            <div>
-              <h5 className="font-medium text-gray-900 mb-4">Pricing Analysis & Actions</h5>
-              
-              {/* Spirit AI Analysis */}
-              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 mb-6">
-                <div className="flex items-center mb-3">
-                  <Brain className="h-5 w-5 text-purple-600 mr-2" />
-                  <span className="font-medium text-purple-900">Spirit AI Analysis</span>
-                </div>
-                <p className="text-sm text-purple-800 mb-4">
-                  This pricing is within a fair range for Louisiana HVAC projects (51-55% markup).
-                </p>
-                
-                {/* Markup Slider */}
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-600">Markup / Margin</span>
-                    <span className="text-xs font-medium text-gray-900">52%</span>
-                  </div>
-                  <div className="relative">
-                    <div className="h-2 bg-gray-200 rounded-full">
-                      <div className="h-2 bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 rounded-full relative">
-                        <div className="absolute top-0 right-1/3 w-1 h-2 bg-white border border-gray-300 rounded-full transform translate-x-1/2"></div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>Low</span>
-                      <span>Fair</span>
-                      <span>High</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-purple-800">
-                  This pricing is within a fair range for Louisiana HVAC projects (51-55% markup).
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <div className="flex space-x-3">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50"
-                    onClick={() => {
-                      updateSubcontractor(rfpId, subcontractor.id, { bidStatus: 'rejected' })
-                    }}
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Reject
-                  </Button>
-                  <Button 
-                    className="flex-1 bg-blue-600 hover:bg-blue-700"
-                    onClick={() => {
-                      updateSubcontractor(rfpId, subcontractor.id, { bidStatus: 'approved' })
-                    }}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Approve
-                  </Button>
-                </div>
-                
-                <div className="flex space-x-3">
-                  <Button variant="outline" className="flex-1">
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Request Changes
-                  </Button>
-                  <Button variant="outline" className="flex-1">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Generate LOI
-                  </Button>
-                </div>
-              </div>
-
-              {/* Performance Metrics */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h6 className="font-medium text-gray-900 mb-3">Performance Metrics</h6>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Past Performance:</span>
-                    <span className="font-medium">{subcontractor.pastPerformance}/5.0</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Price Competitiveness:</span>
-                    <span className="font-medium">{subcontractor.priceCompetitiveness}%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Match Score:</span>
-                    <span className="font-medium">{subcontractor.matchScore}%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Availability:</span>
-                    <Badge className={
-                      subcontractor.availability === 'high' ? 'bg-green-100 text-green-800' :
-                      subcontractor.availability === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }>
-                      {subcontractor.availability}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      ))}
+      {/* Finalize Selection Button */}
+      <div className="flex justify-end">
+        <Button className="bg-blue-600 hover:bg-blue-700 px-8 py-3">
+          <CheckCircle className="h-4 w-4 mr-2" />
+          Finalize Selection
+        </Button>
+      </div>
     </div>
   )
 
@@ -2258,9 +2233,9 @@ export default function SubcontractorManagementPage() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="pricing">Pricing</TabsTrigger>
-                <TabsTrigger value="bid-review">Bid Review</TabsTrigger>
                 <TabsTrigger value="scope">Scope</TabsTrigger>
+                <TabsTrigger value="bid-review">Bid Review</TabsTrigger>
+                <TabsTrigger value="pricing">Pricing</TabsTrigger>
                 <TabsTrigger value="team">Team Assembly</TabsTrigger>
               </TabsList>
               
@@ -2268,16 +2243,16 @@ export default function SubcontractorManagementPage() {
                 {renderOverviewTab()}
               </TabsContent>
               
-              <TabsContent value="pricing" className="mt-6">
-                {renderPricingTab()}
+              <TabsContent value="scope" className="mt-6">
+                {renderScopeAssignmentTab()}
               </TabsContent>
               
               <TabsContent value="bid-review" className="mt-6">
                 {renderBidReviewTab()}
               </TabsContent>
               
-              <TabsContent value="scope" className="mt-6">
-                {renderScopeAssignmentTab()}
+              <TabsContent value="pricing" className="mt-6">
+                {renderPricingTab()}
               </TabsContent>
               
               <TabsContent value="team" className="mt-6">
@@ -3225,6 +3200,191 @@ export default function SubcontractorManagementPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Subcontractor Profile Modal */}
+      <Dialog open={teamAssemblyData?.showSubcontractorProfile || false} onOpenChange={(open) => 
+        updateTeamAssemblyData(rfpId, { showSubcontractorProfile: open })
+      }>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="text-xl font-bold">Subcontractor Profile</DialogTitle>
+                <div className="flex items-center mt-2">
+                  <div className="h-3 w-3 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-sm text-gray-600">Approved</span>
+                  <ChevronDown className="h-4 w-4 ml-1 text-gray-400" />
+                </div>
+              </div>
+              <Badge className="bg-blue-100 text-blue-800">HUBZone</Badge>
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Company Information */}
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Gulf Plains HVAC Services</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">D-U-N-S:</span>
+                    <span className="text-sm font-medium">04-241-8005</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">NAICS:</span>
+                    <span className="text-sm font-medium">236220</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Size:</span>
+                    <span className="text-sm font-medium">Small Business</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Address:</span>
+                    <span className="text-sm font-medium">902 Thatcher Blvd, Amarillo, TX 79105</span>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">Key Contact</h4>
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                      <span className="text-blue-600 font-bold text-sm">OW</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Oscar Wood, Operations Manager</div>
+                      <div className="text-sm text-gray-600">509-924-1335</div>
+                      <div className="text-sm text-gray-600">owood@gulfplainshvac.com</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Past Performance Projects */}
+            <div>
+              <h4 className="font-medium text-gray-900 mb-3">Past Performance Projects</h4>
+              <div className="space-y-2">
+                <div className="flex items-center p-3 bg-red-50 rounded-lg border border-red-200">
+                  <AlertTriangle className="h-4 w-4 text-red-600 mr-2" />
+                  <span className="text-sm text-red-800">General Liability Insurance does not meet minimum limits.</span>
+                  <ChevronRight className="h-4 w-4 text-red-600 ml-auto" />
+                </div>
+                <div className="flex items-center p-3 bg-red-50 rounded-lg border border-red-200">
+                  <AlertTriangle className="h-4 w-4 text-red-600 mr-2" />
+                  <span className="text-sm text-red-800">Insurance documents have expired in the past 30 days.</span>
+                  <ChevronRight className="h-4 w-4 text-red-600 ml-auto" />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Key Contacts */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Key Contacts</h4>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                      <span className="text-blue-600 font-bold text-sm">OW</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">Oscar Wood, Operations Manager</div>
+                      <div className="text-sm text-gray-600">509-924-1359</div>
+                      <div className="text-sm text-gray-600">owood@gulfplainshvac.co</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Projects List */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Projects</h4>
+                <div className="space-y-2">
+                  <div className="p-3 bg-white border border-gray-200 rounded-lg">
+                    <div className="font-medium text-gray-900">HVAC Preventive Maintenance, Amarillo ISD</div>
+                    <div className="text-sm text-gray-600">$3,500K</div>
+                  </div>
+                  <div className="p-3 bg-white border border-gray-200 rounded-lg">
+                    <div className="font-medium text-gray-900">K-12 HVAC Installation, Sunray ISD</div>
+                    <div className="text-sm text-gray-600">$7,600K</div>
+                  </div>
+                  <div className="p-3 bg-white border border-gray-200 rounded-lg">
+                    <div className="font-medium text-gray-900">HVAC System Upgrade, City of Borger</div>
+                    <div className="text-sm text-gray-600">$4,800K</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Compliance Flags */}
+            <div>
+              <h4 className="font-medium text-gray-900 mb-3">Compliance Flags</h4>
+              <div className="space-y-2">
+                <div className="flex items-center p-3 bg-red-50 rounded-lg border border-red-200">
+                  <AlertTriangle className="h-4 w-4 text-red-600 mr-2" />
+                  <span className="text-sm text-red-800">General Liability Insurance does not meet minimum limits.</span>
+                  <ChevronRight className="h-4 w-4 text-red-600 ml-auto" />
+                </div>
+                <div className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <CheckCircle className="h-4 w-4 text-blue-600 mr-2" />
+                  <span className="text-sm text-blue-800">Insurance documents have expired in the past 30 days.</span>
+                  <ChevronRight className="h-4 w-4 text-blue-600 ml-auto" />
+                </div>
+              </div>
+            </div>
+
+            {/* Documents Vault */}
+            <div>
+              <h4 className="font-medium text-gray-900 mb-3">Documents Vault</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <FileText className="h-4 w-4 text-gray-600 mr-2" />
+                    <span className="text-sm font-medium">Capability Statement PDF</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-xs text-gray-500 mr-2">Updated yesterday</span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="h-4 w-4 bg-pink-500 rounded mr-2"></div>
+                    <span className="text-sm font-medium">Certificates of insurance PDF</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-xs text-gray-500 mr-2">Updated 4 days ago</span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="h-4 w-4 bg-orange-500 rounded mr-2"></div>
+                    <span className="text-sm font-medium">HUBZone Certification PDF</span>
+                  </div>
+                  <div className="flex items-center">
+                    <span className="text-xs text-gray-500 mr-2">Updated 1 month ago</span>
+                    <ChevronRight className="h-4 w-4 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Spirit AI Notification */}
+          <div className="fixed bottom-4 left-4 bg-gray-100/90 backdrop-blur-sm rounded-lg p-4 border border-gray-200 shadow-lg">
+            <div className="flex items-center">
+              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center mr-3">
+                <ArrowUp className="h-4 w-4 text-white" />
+              </div>
+              <div>
+                <div className="font-medium text-gray-900">Spirit</div>
+                <div className="text-sm text-gray-700">
+                  Two insurance policies do not meet minimum coverage thresholds. Alternatively, require an updated COI.
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
