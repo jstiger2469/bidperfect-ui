@@ -257,6 +257,7 @@ export default function SubcontractorManagementPage() {
   const teamAssemblyData = currentRFP?.teamAssemblyData
   const workflowProgress = currentRFP?.workflowProgress || 0
   const actionInProgress = teamAssemblyData?.actionInProgress || false
+  const selectedAction = teamAssemblyData?.selectedAction || null
   const teamAssemblySubcontractors = subcontractors // Use the same subcontractors from Zustand store
   const satisfactionStates = teamAssemblyData?.satisfactionStates || {
     'safety-officer': 'pending',
