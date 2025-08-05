@@ -728,16 +728,16 @@ export default function ContractWorkspacePage() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9 bg-gray-100 p-1 rounded-lg">
-            <TabsTrigger value="dashboard" className="text-xs">Dashboard</TabsTrigger>
-            <TabsTrigger value="modifications" className="text-xs">Modifications</TabsTrigger>
-            <TabsTrigger value="deliverables" className="text-xs">Deliverables</TabsTrigger>
-            <TabsTrigger value="subcontractors" className="text-xs">Subcontractors</TabsTrigger>
-            <TabsTrigger value="invoicing" className="text-xs">Invoicing</TabsTrigger>
-            <TabsTrigger value="gfp" className="text-xs">GFP Log</TabsTrigger>
-            <TabsTrigger value="closeout" className="text-xs">Closeout</TabsTrigger>
-            <TabsTrigger value="cpars" className="text-xs">CPARS</TabsTrigger>
-            <TabsTrigger value="vault" className="text-xs">Vault</TabsTrigger>
+          <TabsList className="flex w-full bg-gray-100 p-1 rounded-lg overflow-x-auto">
+            <TabsTrigger value="dashboard" className="text-xs flex-shrink-0">Dashboard</TabsTrigger>
+            <TabsTrigger value="modifications" className="text-xs flex-shrink-0">Modifications</TabsTrigger>
+            <TabsTrigger value="deliverables" className="text-xs flex-shrink-0">Deliverables</TabsTrigger>
+            <TabsTrigger value="subcontractors" className="text-xs flex-shrink-0">Subcontractors</TabsTrigger>
+            <TabsTrigger value="invoicing" className="text-xs flex-shrink-0">Invoicing</TabsTrigger>
+            <TabsTrigger value="gfp" className="text-xs flex-shrink-0">GFP Log</TabsTrigger>
+            <TabsTrigger value="closeout" className="text-xs flex-shrink-0">Closeout</TabsTrigger>
+            <TabsTrigger value="cpars" className="text-xs flex-shrink-0">CPARS</TabsTrigger>
+            <TabsTrigger value="vault" className="text-xs flex-shrink-0">Vault</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
