@@ -2200,6 +2200,138 @@ export default function SubcontractorManagementPage() {
     </div>
   )
 
+  const handleFindCandidates = async (type: 'safety-officer' | 'construction-manager') => {
+    updateTeamAssemblyData(rfpId, { 
+      candidateType: type,
+      showCandidateModal: true 
+    })
+    
+    // Simulate candidate search
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    if (type === 'safety-officer') {
+      updateTeamAssemblyData(rfpId, {
+        availableCandidates: [
+          {
+            id: '1',
+            name: 'Sarah Mitchell',
+            title: 'Safety Officer',
+            experience: 8,
+            certifications: ['OSHA 30', 'First Aid', 'CPR'],
+            availability: 'Immediate',
+            rate: 85,
+            avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face',
+            matchScore: 94
+          },
+          {
+            id: '2',
+            name: 'David Thompson',
+            title: 'Safety Specialist',
+            experience: 12,
+            certifications: ['OSHA 30', 'Safety Management', 'HazMat'],
+            availability: '2 weeks',
+            rate: 95,
+            avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+            matchScore: 87
+          },
+          {
+            id: '3',
+            name: 'Maria Garcia',
+            title: 'Safety Coordinator',
+            experience: 6,
+            certifications: ['OSHA 10', 'Safety Training'],
+            availability: '1 week',
+            rate: 75,
+            avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face',
+            matchScore: 82
+          },
+          {
+            id: '4',
+            name: 'James Wilson',
+            title: 'Safety Manager',
+            experience: 10,
+            certifications: ['OSHA 30', 'Safety Management', 'Risk Assessment'],
+            availability: 'Immediate',
+            rate: 90,
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+            matchScore: 89
+          },
+          {
+            id: '5',
+            name: 'Jennifer Lee',
+            title: 'Safety Consultant',
+            experience: 15,
+            certifications: ['OSHA 30', 'Safety Management', 'HazMat', 'First Aid'],
+            availability: '1 week',
+            rate: 110,
+            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+            matchScore: 96
+          }
+        ]
+      })
+    } else {
+      updateTeamAssemblyData(rfpId, {
+        availableCandidates: [
+          {
+            id: '1',
+            name: 'Alex Rodriguez',
+            title: 'Construction Manager',
+            experience: 12,
+            certifications: ['PMP', 'OSHA 30', 'LEED AP'],
+            availability: 'Immediate',
+            rate: 140,
+            avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+            matchScore: 94
+          },
+          {
+            id: '2',
+            name: 'Robert Chen',
+            title: 'Senior Project Manager',
+            experience: 15,
+            certifications: ['PMP', 'PE', 'Safety Management'],
+            availability: '3 weeks',
+            rate: 160,
+            avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+            matchScore: 91
+          },
+          {
+            id: '3',
+            name: 'Lisa Anderson',
+            title: 'Construction Director',
+            experience: 18,
+            certifications: ['PMP', 'PE', 'LEED AP', 'Safety Management'],
+            availability: '2 weeks',
+            rate: 180,
+            avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+            matchScore: 89
+          },
+          {
+            id: '4',
+            name: 'Michael Brown',
+            title: 'Project Manager',
+            experience: 8,
+            certifications: ['PMP', 'OSHA 30'],
+            availability: 'Immediate',
+            rate: 120,
+            avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+            matchScore: 85
+          },
+          {
+            id: '5',
+            name: 'Emily Davis',
+            title: 'Construction Supervisor',
+            experience: 14,
+            certifications: ['PMP', 'PE', 'Safety Management', 'LEED AP'],
+            availability: '1 week',
+            rate: 150,
+            avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face',
+            matchScore: 92
+          }
+        ]
+      })
+    }
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -2909,7 +3041,7 @@ export default function SubcontractorManagementPage() {
                                     </>
                                   )}
                                 </Button>
-                                <Button size="sm" variant="outline" className="w-full border-red-200 text-red-700">
+                                <Button size="sm" variant="outline" className="w-full border-red-200 text-red-700" onClick={() => handleFindCandidates('safety-officer')}>
                                   <Search className="h-3 w-3 mr-1" />
                                   Find Other Candidates
                                 </Button>
@@ -2968,7 +3100,7 @@ export default function SubcontractorManagementPage() {
                                     </>
                                   )}
                                 </Button>
-                                <Button size="sm" variant="outline" className="w-full border-orange-200 text-orange-700">
+                                <Button size="sm" variant="outline" className="w-full border-orange-200 text-orange-700" onClick={() => handleFindCandidates('construction-manager')}>
                                   <Search className="h-3 w-3 mr-1" />
                                   Find Other Candidates
                                 </Button>
