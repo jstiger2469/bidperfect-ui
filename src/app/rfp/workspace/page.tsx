@@ -406,15 +406,44 @@ export default function RFPWorkspacePage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
   const [journeyProgress, setJourneyProgress] = useState({
-    overview: { completed: true, dataReady: true },
-    evaluation: { completed: false, dataReady: false },
-    instructions: { completed: false, dataReady: false },
-    pws: { completed: false, dataReady: false },
-    team: { completed: false, dataReady: false },
-    subcontractors: { completed: false, dataReady: false },
-    pricing: { completed: false, dataReady: false },
-    proposal: { completed: false, dataReady: false }
+    // Phase 1: RFP Analysis
+    overview: { completed: true, dataReady: true, phase: 1 },
+    evaluation: { completed: false, dataReady: false, phase: 1 },
+    instructions: { completed: false, dataReady: false, phase: 1 },
+    pws: { completed: false, dataReady: false, phase: 1 },
+    
+    // Phase 2: Team & Subcontractor Management
+    team: { completed: false, dataReady: false, phase: 2 },
+    subcontractors: { completed: false, dataReady: false, phase: 2 },
+    
+    // Phase 3: Pricing & Proposal Development
+    pricing: { completed: false, dataReady: false, phase: 3 },
+    proposal: { completed: false, dataReady: false, phase: 3 }
   })
+
+  const phases = [
+    {
+      id: 1,
+      name: 'RFP Analysis',
+      description: 'Understand requirements and evaluation criteria',
+      steps: ['overview', 'evaluation', 'instructions', 'pws'],
+      color: 'blue'
+    },
+    {
+      id: 2,
+      name: 'Team & Subcontractor Management',
+      description: 'Assemble team and assign scope to subcontractors',
+      steps: ['team', 'subcontractors'],
+      color: 'green'
+    },
+    {
+      id: 3,
+      name: 'Pricing & Proposal Development',
+      description: 'Develop pricing strategy and build proposal',
+      steps: ['pricing', 'proposal'],
+      color: 'purple'
+    }
+  ]
 
   const filteredTasks = workspace.tasks.filter(task =>
     task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -431,9 +460,22 @@ export default function RFPWorkspacePage() {
     return journeyProgress[step as keyof typeof journeyProgress]
   }
 
+  const getPhaseProgress = (phaseId: number) => {
+    const phase = phases.find(p => p.id === phaseId)
+    if (!phase) return 0
+    
+    const phaseSteps = phase.steps
+    const completedSteps = phaseSteps.filter(step => 
+      journeyProgress[step as keyof typeof journeyProgress].completed
+    ).length
+    
+    return Math.round((completedSteps / phaseSteps.length) * 100)
+  }
+
   const getOverallProgress = () => {
+    const totalSteps = Object.keys(journeyProgress).length
     const completedSteps = Object.values(journeyProgress).filter(step => step.completed).length
-    return Math.round((completedSteps / 8) * 100)
+    return Math.round((completedSteps / totalSteps) * 100)
   }
 
   const canAccessStep = (step: string) => {
@@ -443,6 +485,17 @@ export default function RFPWorkspacePage() {
     
     const previousStep = stepOrder[currentIndex - 1]
     return journeyProgress[previousStep as keyof typeof journeyProgress].completed
+  }
+
+  const canAccessPhase = (phaseId: number) => {
+    if (phaseId === 1) return true
+    
+    const previousPhase = phases.find(p => p.id === phaseId - 1)
+    if (!previousPhase) return false
+    
+    return previousPhase.steps.every(step => 
+      journeyProgress[step as keyof typeof journeyProgress].completed
+    )
   }
 
   return (
@@ -488,49 +541,89 @@ export default function RFPWorkspacePage() {
             ></div>
           </div>
 
-          {/* Step Indicators */}
-          <div className="grid grid-cols-8 gap-2">
-            {[
-              { key: 'overview', label: 'Overview', icon: '📋' },
-              { key: 'evaluation', label: 'Evaluation', icon: '🎯' },
-              { key: 'instructions', label: 'Instructions', icon: '📝' },
-              { key: 'pws', label: 'PWS/SOW', icon: '📄' },
-              { key: 'team', label: 'Team', icon: '👥' },
-              { key: 'subcontractors', label: 'Subs', icon: '🏗️' },
-              { key: 'pricing', label: 'Pricing', icon: '💰' },
-              { key: 'proposal', label: 'Proposal', icon: '📊' }
-            ].map((step, index) => {
-              const status = getStepStatus(step.key)
-              const canAccess = canAccessStep(step.key)
-              
-              return (
-                <div 
-                  key={step.key}
-                  className={`text-center cursor-pointer transition-all duration-200 ${
-                    canAccess ? 'opacity-100' : 'opacity-50'
-                  }`}
-                  onClick={() => canAccess && setActiveTab(step.key)}
-                >
-                  <div className={`
-                    w-8 h-8 rounded-full mx-auto mb-1 flex items-center justify-center text-sm
-                    ${status.completed 
-                      ? 'bg-green-500 text-white' 
-                      : status.dataReady 
-                        ? 'bg-blue-500 text-white' 
-                        : canAccess 
-                          ? 'bg-gray-300 text-gray-600' 
-                          : 'bg-gray-200 text-gray-400'
-                    }
-                  `}>
-                    {status.completed ? '✓' : step.icon}
+          {/* Phase Indicators */}
+          <div className="space-y-4">
+            {phases.map((phase) => (
+              <div key={phase.id} className="border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
+                      phase.color === 'blue' ? 'bg-blue-500' : 
+                      phase.color === 'green' ? 'bg-green-500' : 'bg-purple-500'
+                    }`}>
+                      {phase.id}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{phase.name}</h4>
+                      <p className="text-sm text-gray-600">{phase.description}</p>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600">{step.label}</div>
-                  {status.dataReady && (
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mx-auto mt-1"></div>
-                  )}
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-gray-900">{getPhaseProgress(phase.id)}%</div>
+                    <div className="text-xs text-gray-600">Phase Complete</div>
+                  </div>
                 </div>
-              )
-            })}
+                
+                {/* Phase Progress Bar */}
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                  <div 
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      phase.color === 'blue' ? 'bg-blue-500' : 
+                      phase.color === 'green' ? 'bg-green-500' : 'bg-purple-500'
+                    }`}
+                    style={{ width: `${getPhaseProgress(phase.id)}%` }}
+                  ></div>
+                </div>
+                
+                {/* Step Indicators */}
+                <div className="grid grid-cols-4 gap-2">
+                  {phase.steps.map((step) => {
+                    const stepConfig = {
+                      overview: { label: 'Overview', icon: '📋' },
+                      evaluation: { label: 'Evaluation', icon: '🎯' },
+                      instructions: { label: 'Instructions', icon: '📝' },
+                      pws: { label: 'PWS/SOW', icon: '📄' },
+                      team: { label: 'Team', icon: '👥' },
+                      subcontractors: { label: 'Subs', icon: '🏗️' },
+                      pricing: { label: 'Pricing', icon: '💰' },
+                      proposal: { label: 'Proposal', icon: '📊' }
+                    }
+                    
+                    const status = getStepStatus(step)
+                    const canAccess = canAccessStep(step)
+                    const config = stepConfig[step as keyof typeof stepConfig]
+                    
+                    return (
+                      <div 
+                        key={step}
+                        className={`text-center cursor-pointer transition-all duration-200 ${
+                          canAccess ? 'opacity-100' : 'opacity-50'
+                        }`}
+                        onClick={() => canAccess && setActiveTab(step)}
+                      >
+                        <div className={`
+                          w-6 h-6 rounded-full mx-auto mb-1 flex items-center justify-center text-xs
+                          ${status.completed 
+                            ? 'bg-green-500 text-white' 
+                            : status.dataReady 
+                              ? 'bg-blue-500 text-white' 
+                              : canAccess 
+                                ? 'bg-gray-300 text-gray-600' 
+                                : 'bg-gray-200 text-gray-400'
+                          }
+                        `}>
+                          {status.completed ? '✓' : config.icon}
+                        </div>
+                        <div className="text-xs text-gray-600">{config.label}</div>
+                        {status.dataReady && (
+                          <div className="w-1 h-1 bg-blue-500 rounded-full mx-auto mt-1"></div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
 
@@ -750,7 +843,7 @@ export default function RFPWorkspacePage() {
                       onClick={() => {
                         setJourneyProgress(prev => ({
                           ...prev,
-                          evaluation: { completed: true, dataReady: true }
+                          evaluation: { completed: true, dataReady: true, phase: 1 }
                         }))
                         setActiveTab('instructions')
                       }}
@@ -900,7 +993,7 @@ export default function RFPWorkspacePage() {
                       onClick={() => {
                         setJourneyProgress(prev => ({
                           ...prev,
-                          instructions: { completed: true, dataReady: true }
+                          instructions: { completed: true, dataReady: true, phase: 1 }
                         }))
                         setActiveTab('pws')
                       }}
@@ -1081,7 +1174,7 @@ export default function RFPWorkspacePage() {
                       onClick={() => {
                         setJourneyProgress(prev => ({
                           ...prev,
-                          pws: { completed: true, dataReady: true }
+                          pws: { completed: true, dataReady: true, phase: 1 }
                         }))
                         setActiveTab('team')
                       }}
