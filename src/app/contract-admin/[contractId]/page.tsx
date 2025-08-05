@@ -1952,9 +1952,9 @@ export default function ContractWorkspacePage() {
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-[90vh] flex flex-col">
+          {/* Header - Fixed */}
+          <div className="flex items-center justify-between p-6 border-b flex-shrink-0">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">Task Manager</h2>
               <p className="text-gray-600">{deliverable.title}</p>
@@ -1986,8 +1986,8 @@ export default function ContractWorkspacePage() {
             </div>
           </div>
 
-          {/* Task Statistics */}
-          <div className="p-6 bg-gray-50 border-b">
+          {/* Task Statistics - Fixed */}
+          <div className="p-6 bg-gray-50 border-b flex-shrink-0">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">{tasks.length}</div>
@@ -2014,8 +2014,8 @@ export default function ContractWorkspacePage() {
             </div>
           </div>
 
-          {/* Task List */}
-          <div className="flex-1 overflow-auto">
+          {/* Task List - Scrollable */}
+          <div className="flex-1 overflow-y-auto">
             <div className="p-6">
               {filteredTasks.length === 0 ? (
                 <div className="text-center py-12">
