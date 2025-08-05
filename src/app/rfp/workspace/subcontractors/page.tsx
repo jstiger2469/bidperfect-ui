@@ -194,7 +194,9 @@ import {
   Users,
   UserCheck,
   UserX,
-  UserPlus
+  UserPlus,
+  Target,
+  BarChart3
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -252,6 +254,60 @@ interface PricingEstimate {
   profit: number
   total: number
   wdCompliance: boolean
+}
+
+// Team Assembly Interfaces
+interface TeamMember {
+  id: string
+  name: string
+  title: string
+  email: string
+  phone: string
+  location: string
+  skills: string[]
+  experience: number
+  clearance: string
+  availability: 'available' | 'partially' | 'unavailable'
+  rate: number
+  matchScore: number
+  status: 'assigned' | 'available' | 'unavailable'
+  avatar: string
+  badges: string[]
+}
+
+interface RoleRequirement {
+  id: string
+  title: string
+  description: string
+  requiredSkills: string[]
+  experience: number
+  clearance: string
+  hours: number
+  priority: 'critical' | 'high' | 'medium' | 'low'
+  status: 'filled' | 'pending' | 'gap'
+  assignedTo?: string
+}
+
+interface SpiritTeamAnalysis {
+  isProcessing: boolean
+  progress: number
+  currentPhase: string
+  teamReadiness: number
+  gaps: {
+    critical: string[]
+    high: string[]
+    medium: string[]
+  }
+  recommendations: {
+    internal: string[]
+    subcontractor: string[]
+    strategic: string[]
+  }
+  automatedActions: {
+    completed: string[]
+    inProgress: string[]
+    pending: string[]
+  }
 }
 
 export default function SubcontractorManagementPage() {
@@ -638,6 +694,425 @@ export default function SubcontractorManagementPage() {
     }))
   }
 
+  // Team Assembly Functions
+  const completeStep = (stepId: number) => {
+    setCompletedSteps(prev => [...prev, stepId])
+    setCurrentStep(stepId + 1)
+    setWorkflowProgress(((stepId + 1) / 4) * 100)
+  }
+
+  const getStepStatus = (stepId: number) => {
+    if (completedSteps.includes(stepId)) return 'completed'
+    if (currentStep === stepId) return 'active'
+    return 'pending'
+  }
+
+  const openStepModal = async (step: any) => {
+    setCurrentStepData(step)
+    setAiSuggestions(null)
+    setShowStepModal(true)
+    await generateAISuggestions(step)
+  }
+
+  const generateAISuggestions = async (step: any) => {
+    // Simulate AI analysis
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const suggestions = {
+      step1: {
+        title: 'AI Recommendations for Critical Gaps',
+        suggestions: [
+          {
+            type: 'critical',
+            title: 'Replace Safety Officer',
+            description: 'Replace Thomas with qualified OSHA-certified personnel',
+            confidence: 95,
+            action: () => handleReplaceMember('Thomas')
+          },
+          {
+            type: 'critical',
+            title: 'Hire Construction Manager',
+            description: 'Add construction manager to fill critical role',
+            confidence: 92,
+            action: () => handleHireConstructionManager()
+          }
+        ],
+        autoProcess: false
+      },
+      step2: {
+        title: 'AI Recommendations for Scope Distribution',
+        suggestions: [
+          {
+            type: 'primary',
+            title: 'Review & Send Scope',
+            description: 'Review scope details then send to subcontractors',
+            confidence: 88,
+            action: () => handleReviewScope()
+          },
+          {
+            type: 'secondary',
+            title: 'Send Scope Directly',
+            description: 'Send scope immediately without review',
+            confidence: 75,
+            action: () => handleSendScope()
+          }
+        ],
+        autoProcess: false
+      },
+      step3: {
+        title: 'AI Recommendations for Team Optimization',
+        suggestions: [
+          {
+            type: 'optimize',
+            title: 'Optimize team composition for 89% readiness',
+            description: 'AI can improve team readiness from 82% to 89%',
+            confidence: 87,
+            action: () => handleOptimizeTeam()
+          }
+        ],
+        autoProcess: true
+      },
+      step4: {
+        title: 'AI Recommendations for Final Team Assembly',
+        suggestions: [
+          {
+            type: 'optimize',
+            title: 'Optimize Team Composition',
+            description: 'AI analysis shows 89% team readiness with optimization opportunities',
+            confidence: 92,
+            action: () => handleOptimizeTeam()
+          },
+          {
+            type: 'verify',
+            title: 'Verify All Credentials & Clearances',
+            description: 'Ensure all team members have required certifications and security clearances',
+            confidence: 95,
+            action: () => console.log('Verify credentials')
+          },
+          {
+            type: 'compliance',
+            title: 'Run Complete Compliance Check',
+            description: 'Verify Davis-Bacon Act compliance and insurance requirements',
+            confidence: 88,
+            action: () => console.log('Run compliance check')
+          },
+          {
+            type: 'balance',
+            title: 'Balance Team Workload',
+            description: 'Distribute work evenly across team members for optimal efficiency',
+            confidence: 85,
+            action: () => console.log('Balance workload')
+          },
+          {
+            type: 'backup',
+            title: 'Identify Backup Personnel',
+            description: 'Assign backup team members for critical roles',
+            confidence: 90,
+            action: () => console.log('Assign backups')
+          }
+        ],
+        autoProcess: false
+      }
+    }
+    
+    const stepKey = `step${step.id}` as keyof typeof suggestions
+    
+    if (suggestions[stepKey]) {
+      setAiSuggestions(suggestions[stepKey])
+    } else {
+      setAiSuggestions({
+        title: 'AI Recommendations',
+        suggestions: [
+          {
+            type: 'general',
+            title: 'Complete this step',
+            description: 'Proceed with the recommended actions for this step',
+            confidence: 85,
+            action: () => completeStep(step.id)
+          }
+        ],
+        autoProcess: false
+      })
+    }
+  }
+
+  const handleAutoProcessing = async () => {
+    setAutoProcessing(true)
+    
+    if (aiSuggestions) {
+      for (const suggestion of aiSuggestions.suggestions) {
+        await suggestion.action()
+        await new Promise(resolve => setTimeout(resolve, 1000))
+      }
+    }
+    
+    setAutoProcessing(false)
+    setShowStepModal(false)
+    completeStep(currentStep)
+  }
+
+  const handleReplaceMember = async (memberName: string) => {
+    setActionInProgress(true)
+    setSelectedAction('replacing-member')
+    
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    setTeamMembers(prev => prev.map(member => 
+      member.name === memberName 
+        ? { ...member, name: 'Sarah Mitchell', title: 'Safety Officer', badges: [...member.badges, 'OSHA Certified'] }
+        : member
+    ))
+    
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      teamReadiness: 89,
+      gaps: {
+        ...prev.gaps,
+        critical: prev.gaps.critical.filter(gap => !gap.includes('Safety Officer'))
+      }
+    }))
+    
+    setActionInProgress(false)
+    setSelectedAction(null)
+    completeStep(1)
+  }
+
+  const handleHireConstructionManager = async () => {
+    setActionInProgress(true)
+    setSelectedAction('hiring-manager')
+    
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const newManager: TeamMember = {
+      id: '5',
+      name: 'Alex Rodriguez',
+      title: 'Construction Manager',
+      email: 'alex.rodriguez@company.com',
+      phone: '(555) 567-8901',
+      location: 'Washington, DC',
+      skills: ['Construction Management', 'Federal Projects', 'Safety'],
+      experience: 12,
+      clearance: 'Secret',
+      availability: 'available',
+      rate: 115,
+      matchScore: 91,
+      status: 'assigned',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+      badges: ['PMP', 'OSHA Certified']
+    }
+    
+    setTeamMembers(prev => [...prev, newManager])
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      teamReadiness: 89,
+      gaps: {
+        ...prev.gaps,
+        critical: prev.gaps.critical.filter(gap => !gap.includes('Construction Manager'))
+      }
+    }))
+    
+    setActionInProgress(false)
+    setSelectedAction(null)
+    completeStep(1)
+  }
+
+  const handleOptimizeTeam = async () => {
+    setActionInProgress(true)
+    setSelectedAction('optimizing-team')
+    
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      teamReadiness: 94,
+      automatedActions: {
+        ...prev.automatedActions,
+        completed: [...prev.automatedActions.completed, 'Team optimization completed']
+      }
+    }))
+    
+    setActionInProgress(false)
+    setSelectedAction(null)
+  }
+
+  const handleSendScope = async () => {
+    setActionInProgress(true)
+    setSelectedAction('sending-scope')
+    
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      automatedActions: {
+        ...prev.automatedActions,
+        completed: [...prev.automatedActions.completed, 'Scope sent to subcontractors']
+      }
+    }))
+    
+    setActionInProgress(false)
+    setSelectedAction(null)
+    completeStep(2)
+  }
+
+  const handleReviewScope = async () => {
+    setShowStepModal(false)
+    setShowScopeModal(true)
+  }
+
+  const workflowSteps = [
+    {
+      id: 1,
+      title: 'Resolve Critical Gaps',
+      description: 'Address safety officer certification and construction manager role',
+      status: 'active'
+    },
+    {
+      id: 2,
+      title: 'Review & Send Scope',
+      description: 'Review scope details then send to selected subcontractors',
+      status: 'pending'
+    },
+    {
+      id: 3,
+      title: 'Team Optimization',
+      description: 'Optimize team composition and workload distribution',
+      status: 'pending'
+    },
+    {
+      id: 4,
+      title: 'Final Team Assembly',
+      description: 'Complete team assembly and final approval',
+      status: 'pending'
+    }
+  ]
+
+  // Team Assembly State Variables
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
+    {
+      id: '1',
+      name: 'Sarah Johnson',
+      title: 'Senior Cloud Architect',
+      email: 'sarah.johnson@company.com',
+      phone: '(555) 123-4567',
+      location: 'Washington, DC',
+      skills: ['AWS', 'Azure', 'Cloud Migration', 'DevOps', 'Security'],
+      experience: 8,
+      clearance: 'Secret',
+      availability: 'available',
+      rate: 125,
+      matchScore: 95,
+      status: 'assigned',
+      avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face',
+      badges: ['Project Manager', 'SECRET Clearance']
+    },
+    {
+      id: '2',
+      name: 'Michael Chen',
+      title: 'Security Engineer',
+      email: 'michael.chen@company.com',
+      phone: '(555) 234-5678',
+      location: 'Arlington, VA',
+      skills: ['FISMA', 'FedRAMP', 'Security Controls', 'Compliance'],
+      experience: 6,
+      clearance: 'Top Secret',
+      availability: 'available',
+      rate: 110,
+      matchScore: 88,
+      status: 'assigned',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      badges: ['Security Lead']
+    },
+    {
+      id: '3',
+      name: 'Jennifer Davis',
+      title: 'Project Manager',
+      email: 'jennifer.davis@company.com',
+      phone: '(555) 345-6789',
+      location: 'Alexandria, VA',
+      skills: ['PMP', 'Agile', 'Federal Contracts', 'Risk Management'],
+      experience: 10,
+      clearance: 'Secret',
+      availability: 'partially',
+      rate: 95,
+      matchScore: 92,
+      status: 'assigned',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+      badges: ['PMP Certified', 'Agile Lead']
+    },
+    {
+      id: '4',
+      name: 'James Wilson',
+      title: 'Proposal Writer',
+      email: 'james.wilson@company.com',
+      phone: '(555) 456-7890',
+      location: 'Reston, VA',
+      skills: ['Technical Writing', 'Federal Proposals', 'Compliance'],
+      experience: 7,
+      clearance: 'Public Trust',
+      availability: 'available',
+      rate: 85,
+      matchScore: 89,
+      status: 'assigned',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      badges: ['Technical Writer']
+    }
+  ])
+
+  const [spiritAnalysis, setSpiritAnalysis] = useState<SpiritTeamAnalysis>({
+    isProcessing: false,
+    progress: 0,
+    currentPhase: 'Initializing',
+    teamReadiness: 82,
+    gaps: {
+      critical: ['Safety Officer certification expired', 'Construction Manager role unfilled'],
+      high: ['Backup personnel needed for critical roles'],
+      medium: ['Team workload distribution optimization']
+    },
+    recommendations: {
+      internal: ['Replace Thomas with qualified OSHA-certified personnel', 'Assign backup for Project Manager role'],
+      subcontractor: ['Hire construction manager through subcontractor', 'Request updated certifications'],
+      strategic: ['Optimize team composition for 89% readiness', 'Balance workload across team members']
+    },
+    automatedActions: {
+      completed: ['Team composition analysis', 'Gap identification'],
+      inProgress: ['Compliance verification'],
+      pending: ['Team optimization', 'Final approval']
+    }
+  })
+
+  // Team Assembly Workflow State
+  const [currentStep, setCurrentStep] = useState(1)
+  const [completedSteps, setCompletedSteps] = useState<number[]>([])
+  const [workflowProgress, setWorkflowProgress] = useState(25)
+  const [showStepModal, setShowStepModal] = useState(false)
+  const [currentStepData, setCurrentStepData] = useState<any>(null)
+  const [aiSuggestions, setAiSuggestions] = useState<any>(null)
+  const [autoProcessing, setAutoProcessing] = useState(false)
+  const [actionInProgress, setActionInProgress] = useState(false)
+  const [selectedAction, setSelectedAction] = useState<string | null>(null)
+
+  // Candidate Selection State
+  const [showCandidateModal, setShowCandidateModal] = useState(false)
+  const [candidateType, setCandidateType] = useState<'safety-officer' | 'construction-manager' | null>(null)
+  const [availableCandidates, setAvailableCandidates] = useState<any[]>([])
+  const [selectedCandidates, setSelectedCandidates] = useState<Record<string, any>>({})
+  const [satisfactionStates, setSatisfactionStates] = useState<Record<string, 'pending' | 'satisfied' | 'modifying'>>({
+    'safety-officer': 'pending',
+    'construction-manager': 'pending'
+  })
+
+  // Scenario Simulator State
+  const [showScenarioSimulator, setShowScenarioSimulator] = useState(false)
+  const [currentScenario, setCurrentScenario] = useState<string | null>(null)
+  const [scenarioResults, setScenarioResults] = useState<any>(null)
+  const [isSimulating, setIsSimulating] = useState(false)
+
+  // Scope Review State
+  const [showScopeModal, setShowScopeModal] = useState(false)
+  const [scopeData, setScopeData] = useState<any>(null)
+  const [selectedSubcontractors, setSelectedSubcontractors] = useState<string[]>([])
+  const [scopeApproved, setScopeApproved] = useState(false)
+
   const renderOverviewTab = () => (
     <div className="space-y-6">
       {/* Compliance Check Summary */}
@@ -880,93 +1355,231 @@ export default function SubcontractorManagementPage() {
 
   const renderTeamAssemblyTab = () => (
     <div className="space-y-6">
-      {/* Team Assembly Overview */}
-      <Card className="p-6">
+      {/* Team Assembly Workflow */}
+      <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Contractor Team Assembly</h3>
-            <p className="text-gray-600">Building your winning team with Spirit AI guidance</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Team Assembly Workflow</h3>
+            <p className="text-gray-600">Guided process to assemble and optimize your project team</p>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold text-blue-600">82%</div>
+            <div className="text-3xl font-bold text-blue-600">{spiritAnalysis.teamReadiness}%</div>
             <div className="text-sm text-gray-600">Team Readiness</div>
           </div>
         </div>
+        
+        {/* Progress Bar */}
+        <div className="mb-6">
+          <div className="flex justify-between text-sm text-gray-600 mb-2">
+            <span>Progress</span>
+            <span>{workflowProgress}%</span>
+          </div>
+          <Progress value={workflowProgress} className="h-3" />
+        </div>
+
+        {/* Workflow Steps */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {workflowSteps.map((step, index) => {
+            const status = getStepStatus(step.id)
+            return (
+              <motion.div
+                key={step.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                  status === 'completed' 
+                    ? 'bg-green-50 border-green-200' 
+                    : status === 'active'
+                    ? 'bg-blue-50 border-blue-200 shadow-lg'
+                    : 'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    status === 'completed' 
+                      ? 'bg-green-500 text-white' 
+                      : status === 'active'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-300 text-gray-600'
+                  }`}>
+                    {status === 'completed' ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      step.id
+                    )}
+                  </div>
+                  <Badge className={
+                    status === 'completed' ? 'bg-green-100 text-green-800' :
+                    status === 'active' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-600'
+                  }>
+                    {status === 'completed' ? 'Completed' : status === 'active' ? 'Active' : 'Pending'}
+                  </Badge>
+                </div>
+                
+                <h4 className={`font-semibold mb-2 ${
+                  status === 'completed' ? 'text-green-900' :
+                  status === 'active' ? 'text-blue-900' :
+                  'text-gray-700'
+                }`}>
+                  {step.title}
+                </h4>
+                
+                <p className={`text-sm mb-4 ${
+                  status === 'completed' ? 'text-green-700' :
+                  status === 'active' ? 'text-blue-700' :
+                  'text-gray-600'
+                }`}>
+                  {step.description}
+                </p>
+
+                {status === 'active' && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="relative overflow-hidden"
+                  >
+                    <Button 
+                      size="sm"
+                      className="w-full bg-gradient-to-r from-purple-600 via-blue-600 to-purple-700 hover:from-purple-700 hover:via-blue-700 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300 border-0 text-white font-semibold py-3 px-4 relative overflow-hidden group"
+                      onClick={() => openStepModal(step)}
+                      disabled={actionInProgress}
+                    >
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                      
+                      <div className="relative flex items-center justify-center">
+                        <div className="mr-2 p-1 rounded-full bg-white/20 backdrop-blur-sm">
+                          <Brain className="h-4 w-4 text-white drop-shadow-sm" />
+                        </div>
+                        <span className="text-sm font-medium tracking-wide">
+                          Begin Analysis
+                        </span>
+                        <ChevronRight className="h-4 w-4 ml-2 text-white/80 group-hover:translate-x-1 transition-transform duration-200" />
+                      </div>
+                    </Button>
+                    
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-400/20 to-blue-400/20 animate-pulse pointer-events-none"></div>
+                  </motion.div>
+                )}
+                
+                {status === 'completed' && (
+                  <div className="flex items-center text-green-700">
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    <span className="text-sm font-medium">Step Complete</span>
+                  </div>
+                )}
+              </motion.div>
+            )
+          })}
+        </div>
       </Card>
 
-      {/* Prime Contractor Section */}
+      {/* Prime Contractor Team */}
       <Card className="p-6">
-        <h4 className="text-lg font-semibold text-gray-900 mb-4">Prime Contractor</h4>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Prime Contractor Team</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { name: 'Colleen', role: 'Prime Contractor', badges: ['Project Manager', 'SECRET Clearance'] },
-            { name: 'Ethan', role: 'Estimator', badges: [] },
-            { name: 'Sarah', role: 'Compliance Lead', badges: [], warning: true },
-            { name: 'James', role: 'Proposal Writer', badges: [] }
-          ].map((member, index) => (
-            <div key={index} className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center mb-2">
-                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                  <span className="text-blue-600 font-medium">{member.name[0]}</span>
-                </div>
-                <div>
-                  <div className="font-medium text-gray-900">{member.name}</div>
-                  <div className="text-sm text-gray-600">{member.role}</div>
+          {teamMembers.map((member, index) => (
+            <motion.div
+              key={member.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-200 hover:shadow-lg transition-all duration-300"
+            >
+              <div className="flex items-center mb-3">
+                <img 
+                  src={member.avatar} 
+                  alt={member.name}
+                  className="w-12 h-12 rounded-full border-2 border-blue-200 shadow-sm"
+                />
+                <div className="ml-3">
+                  <h4 className="font-semibold text-gray-900">{member.name}</h4>
+                  <p className="text-sm text-gray-600">{member.title}</p>
                 </div>
               </div>
-              <div className="space-y-1">
-                {member.badges.map((badge, badgeIndex) => (
-                  <Badge key={badgeIndex} className="bg-green-100 text-green-800 text-xs mr-1">
-                    {badge}
-                  </Badge>
-                ))}
-                {member.warning && (
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                )}
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Match Score</span>
+                  <span className="text-sm font-semibold text-green-600">{member.matchScore}%</span>
+                </div>
+                <Progress value={member.matchScore} className="h-2" />
+                
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {member.badges.map((badge, badgeIndex) => (
+                    <Badge key={badgeIndex} className="text-xs bg-blue-100 text-blue-800">
+                      {badge}
+                    </Badge>
+                  ))}
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       </Card>
 
-      {/* Subcontractors Section */}
+      {/* Subcontractor Partners */}
       <Card className="p-6">
-        <h4 className="text-lg font-semibold text-gray-900 mb-4">Subcontractors</h4>
-        <div className="space-y-4">
-          {subcontractors.map((sub) => (
-            <div key={sub.id} className="p-4 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Subcontractor Partners</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {subcontractors.filter(sub => sub.status === 'approved' || sub.status === 'evaluating').map((sub, index) => (
+            <motion.div
+              key={sub.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="p-4 bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-200 hover:shadow-lg transition-all duration-300"
+            >
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center">
-                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                    <Building2 className="h-6 w-6 text-blue-600" />
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                    {sub.name.charAt(0)}
                   </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{sub.name}</div>
-                    <div className="text-sm text-gray-600">{sub.type}</div>
+                  <div className="ml-3">
+                    <h4 className="font-semibold text-gray-900">{sub.name}</h4>
+                    <p className="text-sm text-gray-600">{sub.type}</p>
                   </div>
                 </div>
                 <Badge className={
                   sub.status === 'approved' ? 'bg-green-100 text-green-800' :
-                  sub.status === 'evaluating' ? 'bg-blue-100 text-blue-800' :
                   'bg-yellow-100 text-yellow-800'
                 }>
                   {sub.status}
                 </Badge>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <div className="text-sm font-medium text-gray-700">Readiness</div>
-                  <div className="text-lg font-semibold text-blue-600">{sub.readiness}%</div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Match Score</span>
+                  <span className="text-sm font-semibold text-green-600">{sub.matchScore}%</span>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-700">Match Score</div>
-                  <div className="text-lg font-semibold text-green-600">{sub.matchScore}%</div>
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-700">Pricing</div>
-                  <div className="text-lg font-semibold text-purple-600">${sub.pricing.total}/hr</div>
+                <Progress value={sub.matchScore} className="h-2" />
+                
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {sub.specialties.slice(0, 2).map((specialty, specialtyIndex) => (
+                    <Badge key={specialtyIndex} className="text-xs bg-green-100 text-green-800">
+                      {specialty}
+                    </Badge>
+                  ))}
                 </div>
               </div>
+            </motion.div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Critical Gaps */}
+      <Card className="p-6 bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
+        <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+          <AlertTriangle className="h-5 w-5 mr-2" />
+          Critical Gaps
+        </h3>
+        <div className="space-y-3">
+          {spiritAnalysis.gaps.critical.map((gap, index) => (
+            <div key={index} className="flex items-center p-3 bg-white rounded-lg border border-red-200">
+              <AlertTriangle className="h-5 w-5 text-red-600 mr-3 flex-shrink-0" />
+              <span className="text-red-800">{gap}</span>
             </div>
           ))}
         </div>
@@ -1005,10 +1618,11 @@ export default function SubcontractorManagementPage() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="overview">Compliance Check</TabsTrigger>
                 <TabsTrigger value="pricing">Pricing Estimator</TabsTrigger>
                 <TabsTrigger value="team">Team Assembly</TabsTrigger>
+                <TabsTrigger value="management">Sub Management</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="mt-6">
@@ -1020,6 +1634,10 @@ export default function SubcontractorManagementPage() {
               </TabsContent>
               
               <TabsContent value="team" className="mt-6">
+                {renderTeamAssemblyTab()}
+              </TabsContent>
+              
+              <TabsContent value="management" className="mt-6">
                 {renderTeamAssemblyTab()}
               </TabsContent>
             </Tabs>
@@ -1511,6 +2129,459 @@ export default function SubcontractorManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Team Assembly Step Modal */}
+      <AnimatePresence>
+        {showStepModal && currentStepData && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Step {currentStepData.id}: {currentStepData.title}</h2>
+                    <p className="text-blue-100">{currentStepData.description}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowStepModal(false)}
+                    className="text-white hover:bg-white/20"
+                  >
+                    <X className="h-5 w-5" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="p-6 max-h-[calc(90vh-120px)] overflow-y-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Spirit AI Recommendations */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <Brain className="h-5 w-5 mr-2 text-purple-600" />
+                      Spirit AI Recommendations
+                    </h3>
+                    
+                    {!aiSuggestions ? (
+                      <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="flex items-center">
+                          <Loader2 className="h-4 w-4 animate-spin text-purple-600 mr-2" />
+                          <span className="text-purple-800">Spirit AI is analyzing options...</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {aiSuggestions.suggestions.map((suggestion: any, index: number) => (
+                          <div key={index} className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-semibold text-gray-900">{suggestion.title}</h4>
+                              <Badge className="bg-purple-100 text-purple-800">
+                                {suggestion.confidence}% confidence
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">{suggestion.description}</p>
+                            <Button 
+                              size="sm" 
+                              className="w-full bg-purple-600 hover:bg-purple-700"
+                              onClick={suggestion.action}
+                              disabled={actionInProgress}
+                            >
+                              {actionInProgress && selectedAction === suggestion.title.toLowerCase().replace(/\s+/g, '-') ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <Check className="h-3 w-3 mr-1" />
+                                  Apply This Recommendation
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        ))}
+                        
+                        {aiSuggestions.autoProcess && (
+                          <Button 
+                            className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+                            onClick={handleAutoProcessing}
+                            disabled={autoProcessing}
+                          >
+                            {autoProcessing ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Auto-Processing All Recommendations...
+                              </>
+                            ) : (
+                              <>
+                                <Zap className="h-4 w-4 mr-2" />
+                                Auto-Process All Recommendations
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Manual Options */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <Settings className="h-5 w-5 mr-2 text-gray-600" />
+                      Manual Options
+                    </h3>
+                    
+                    <div className="space-y-4">
+                      {currentStepData.id === 1 && (
+                        <div className="space-y-4">
+                          {/* Safety Officer Options */}
+                          <div className={`p-4 rounded-xl border transition-all duration-300 ${
+                            satisfactionStates['safety-officer'] === 'satisfied' 
+                              ? 'bg-gradient-to-r from-green-50 to-green-100/50 border-green-200' 
+                              : 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200'
+                          }`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className={`font-semibold flex items-center ${
+                                satisfactionStates['safety-officer'] === 'satisfied' 
+                                  ? 'text-green-900' 
+                                  : 'text-red-900'
+                              }`}>
+                                {satisfactionStates['safety-officer'] === 'satisfied' ? (
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                ) : (
+                                  <AlertTriangle className="h-4 w-4 mr-2" />
+                                )}
+                                Safety Officer Certification Issue
+                              </h4>
+                              {satisfactionStates['safety-officer'] === 'satisfied' && (
+                                <Badge className="bg-green-100 text-green-800 border border-green-300">
+                                  ✅ Resolved
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="p-3 bg-white rounded-lg border border-red-100">
+                              <p className="text-sm text-gray-600 mb-3">Thomas's OSHA certification has expired. Choose an action:</p>
+                              <div className="space-y-2">
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-red-600 hover:bg-red-700"
+                                  onClick={() => handleReplaceMember('Thomas')}
+                                  disabled={actionInProgress}
+                                >
+                                  {actionInProgress && selectedAction === 'replacing-member' ? (
+                                    <>
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                      Replacing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCheck className="h-3 w-3 mr-1" />
+                                      Replace with Sarah Mitchell
+                                    </>
+                                  )}
+                                </Button>
+                                <Button size="sm" variant="outline" className="w-full border-red-200 text-red-700">
+                                  <Search className="h-3 w-3 mr-1" />
+                                  Find Other Candidates
+                                </Button>
+                                <Button size="sm" variant="outline" className="w-full border-red-200 text-red-700">
+                                  <RefreshCw className="h-3 w-3 mr-1" />
+                                  Request Certification Renewal
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Construction Manager Options */}
+                          <div className={`p-4 rounded-xl border transition-all duration-300 ${
+                            satisfactionStates['construction-manager'] === 'satisfied' 
+                              ? 'bg-gradient-to-r from-green-50 to-green-100/50 border-green-200' 
+                              : 'bg-gradient-to-r from-orange-50 to-yellow-50 border-orange-200'
+                          }`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className={`font-semibold flex items-center ${
+                                satisfactionStates['construction-manager'] === 'satisfied' 
+                                  ? 'text-green-900' 
+                                  : 'text-orange-900'
+                              }`}>
+                                {satisfactionStates['construction-manager'] === 'satisfied' ? (
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                ) : (
+                                  <AlertTriangle className="h-4 w-4 mr-2" />
+                                )}
+                                Construction Manager Role
+                              </h4>
+                              {satisfactionStates['construction-manager'] === 'satisfied' && (
+                                <Badge className="bg-green-100 text-green-800 border border-green-300">
+                                  ✅ Filled
+                                </Badge>
+                              )}
+                            </div>
+                            
+                            <div className="p-3 bg-white rounded-lg border border-orange-100">
+                              <p className="text-sm text-gray-600 mb-3">Construction Manager role is unfilled. Choose an action:</p>
+                              <div className="space-y-2">
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-orange-600 hover:bg-orange-700"
+                                  onClick={() => handleHireConstructionManager()}
+                                  disabled={actionInProgress}
+                                >
+                                  {actionInProgress && selectedAction === 'hiring-manager' ? (
+                                    <>
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                      Hiring...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserPlus className="h-3 w-3 mr-1" />
+                                      Hire Alex Rodriguez
+                                    </>
+                                  )}
+                                </Button>
+                                <Button size="sm" variant="outline" className="w-full border-orange-200 text-orange-700">
+                                  <Search className="h-3 w-3 mr-1" />
+                                  Find Other Candidates
+                                </Button>
+                                <Button size="sm" variant="outline" className="w-full border-orange-200 text-orange-700">
+                                  <Building2 className="h-3 w-3 mr-1" />
+                                  Subcontract This Role
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {currentStepData.id === 2 && (
+                        <div className="space-y-4">
+                          <div className="p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-xl border border-blue-200">
+                            <h4 className="font-semibold text-blue-900 mb-3 flex items-center">
+                              <Send className="h-4 w-4 mr-2" />
+                              Scope Distribution Options
+                            </h4>
+                            <div className="space-y-3">
+                              <div className="p-3 bg-white rounded-lg border border-blue-100">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h5 className="font-medium text-gray-900">Review & Send Scope</h5>
+                                  <Badge className="bg-blue-100 text-blue-800">Recommended</Badge>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-3">Review scope details then send to subcontractors</p>
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => handleReviewScope()}
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  Review & Send Scope
+                                </Button>
+                              </div>
+                              
+                              <div className="p-3 bg-white rounded-lg border border-gray-100">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h5 className="font-medium text-gray-900">Send Scope Directly</h5>
+                                  <Badge className="bg-gray-100 text-gray-800">Quick Action</Badge>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-3">Send scope immediately without review</p>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="w-full border-gray-200 text-gray-700"
+                                  onClick={() => handleSendScope()}
+                                  disabled={actionInProgress}
+                                >
+                                  {actionInProgress && selectedAction === 'sending-scope' ? (
+                                    <>
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                      Sending...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className="h-3 w-3 mr-1" />
+                                      Send Scope Now
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {currentStepData.id === 3 && (
+                        <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
+                          <h4 className="font-semibold text-green-900 mb-3 flex items-center">
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            Team Optimization Options
+                          </h4>
+                          <div className="space-y-3">
+                            <div className="p-3 bg-white rounded-lg border border-green-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-gray-900">Optimize Team</h5>
+                                <Badge className="bg-green-100 text-green-800">Recommended</Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">AI-powered team composition optimization</p>
+                              <div className="space-y-2">
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-green-600 hover:bg-green-700"
+                                  onClick={() => handleOptimizeTeam()}
+                                  disabled={actionInProgress}
+                                >
+                                  {actionInProgress && selectedAction === 'optimizing-team' ? (
+                                    <>
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                      Optimizing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Brain className="h-3 w-3 mr-1" />
+                                      Run AI Optimization
+                                    </>
+                                  )}
+                                </Button>
+                                <Button size="sm" variant="outline" className="w-full border-green-200 text-green-700">
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  Verify All Credentials
+                                </Button>
+                                <Button size="sm" variant="outline" className="w-full border-green-200 text-green-700">
+                                  <CheckSquare className="h-3 w-3 mr-1" />
+                                  Run Compliance Check
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {currentStepData.id === 4 && (
+                        <div className="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border border-green-200">
+                          <h4 className="font-semibold text-green-900 mb-3 flex items-center">
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Final Team Assembly Options
+                          </h4>
+                          <div className="space-y-3">
+                            <div className="p-3 bg-white rounded-lg border border-green-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-gray-900">Optimize Team Composition</h5>
+                                <Badge className="bg-green-100 text-green-800">Recommended</Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">AI analysis shows 89% team readiness with optimization opportunities</p>
+                              <div className="space-y-2">
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-green-600 hover:bg-green-700"
+                                  onClick={() => handleOptimizeTeam()}
+                                  disabled={actionInProgress}
+                                >
+                                  {actionInProgress && selectedAction === 'optimizing-team' ? (
+                                    <>
+                                      <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                      Optimizing...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Brain className="h-3 w-3 mr-1" />
+                                      Run AI Optimization
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="p-3 bg-white rounded-lg border border-blue-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-gray-900">Verify Credentials & Clearances</h5>
+                                <Badge className="bg-blue-100 text-blue-800">Critical</Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">Ensure all team members have required certifications and security clearances</p>
+                              <div className="space-y-2">
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => console.log('Verify credentials')}
+                                >
+                                  <Shield className="h-3 w-3 mr-1" />
+                                  Verify All Credentials
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="p-3 bg-white rounded-lg border border-purple-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-gray-900">Run Compliance Check</h5>
+                                <Badge className="bg-purple-100 text-purple-800">Required</Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">Verify Davis-Bacon Act compliance and insurance requirements</p>
+                              <div className="space-y-2">
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-purple-600 hover:bg-purple-700"
+                                  onClick={() => console.log('Run compliance check')}
+                                >
+                                  <CheckSquare className="h-3 w-3 mr-1" />
+                                  Run Compliance Check
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="p-3 bg-white rounded-lg border border-orange-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-gray-900">Balance Team Workload</h5>
+                                <Badge className="bg-orange-100 text-orange-800">Optimization</Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">Distribute work evenly across team members for optimal efficiency</p>
+                              <div className="space-y-2">
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-orange-600 hover:bg-orange-700"
+                                  onClick={() => console.log('Balance workload')}
+                                >
+                                  <BarChart3 className="h-3 w-3 mr-1" />
+                                  Balance Workload
+                                </Button>
+                              </div>
+                            </div>
+                            
+                            <div className="p-3 bg-white rounded-lg border border-yellow-100">
+                              <div className="flex items-center justify-between mb-2">
+                                <h5 className="font-medium text-gray-900">Identify Backup Personnel</h5>
+                                <Badge className="bg-yellow-100 text-yellow-800">Risk Mitigation</Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-3">Assign backup team members for critical roles</p>
+                              <div className="space-y-2">
+                                <Button 
+                                  size="sm" 
+                                  className="w-full bg-yellow-600 hover:bg-yellow-700"
+                                  onClick={() => console.log('Assign backups')}
+                                >
+                                  <Users className="h-3 w-3 mr-1" />
+                                  Assign Backup Personnel
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 } 
