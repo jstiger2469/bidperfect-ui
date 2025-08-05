@@ -255,6 +255,8 @@ export default function SubcontractorManagementPage() {
   const subcontractors = getSubcontractors(rfpId)
   const spiritAnalysis = getSpiritAnalysis(rfpId)
   const teamAssemblyData = currentRFP?.teamAssemblyData
+  const workflowProgress = currentRFP?.workflowProgress || 0
+  const actionInProgress = teamAssemblyData?.actionInProgress || false
 
   // Local state for UI
   const [activeTab, setActiveTab] = useState('overview')
