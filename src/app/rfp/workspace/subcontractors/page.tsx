@@ -257,6 +257,22 @@ export default function SubcontractorManagementPage() {
   const teamAssemblyData = currentRFP?.teamAssemblyData
   const workflowProgress = currentRFP?.workflowProgress || 0
   const actionInProgress = teamAssemblyData?.actionInProgress || false
+  const satisfactionStates = teamAssemblyData?.satisfactionStates || {
+    'safety-officer': 'pending',
+    'construction-manager': 'pending'
+  }
+  const selectedCandidates = teamAssemblyData?.selectedCandidates || {}
+  const availableCandidates = teamAssemblyData?.availableCandidates || []
+  const candidateType = teamAssemblyData?.candidateType || null
+  const showCandidateModal = teamAssemblyData?.showCandidateModal || false
+  const showScenarioSimulator = teamAssemblyData?.showScenarioSimulator || false
+  const currentScenario = teamAssemblyData?.currentScenario || null
+  const scenarioResults = teamAssemblyData?.scenarioResults || null
+  const isSimulating = teamAssemblyData?.isSimulating || false
+  const showScopeModal = teamAssemblyData?.showScopeModal || false
+  const scopeData = teamAssemblyData?.scopeData || null
+  const selectedSubcontractors = teamAssemblyData?.selectedSubcontractors || []
+  const scopeApproved = teamAssemblyData?.scopeApproved || false
 
   // Local state for UI
   const [activeTab, setActiveTab] = useState('overview')
@@ -1077,11 +1093,11 @@ export default function SubcontractorManagementPage() {
               Overall Readiness
             </Button>
             <Button 
-              onClick={startTeamAnalysis}
-              disabled={spiritAnalysis.isProcessing}
+              onClick={() => startTeamAnalysis(rfpId)}
+              disabled={spiritAnalysis?.isProcessing}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
             >
-              {spiritAnalysis.isProcessing ? (
+              {spiritAnalysis?.isProcessing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Analyzing...
@@ -1109,7 +1125,7 @@ export default function SubcontractorManagementPage() {
               </div>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-blue-600">{spiritAnalysis.teamReadiness}%</div>
+              <div className="text-3xl font-bold text-blue-600">{spiritAnalysis?.teamReadiness}%</div>
               <div className="text-sm text-gray-600">Team Readiness</div>
             </div>
           </div>
@@ -1120,7 +1136,7 @@ export default function SubcontractorManagementPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Processing Status */}
-          {spiritAnalysis.isProcessing && (
+          {spiritAnalysis?.isProcessing && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1137,7 +1153,7 @@ export default function SubcontractorManagementPage() {
           )}
 
           {/* Team Analysis Results */}
-          {!spiritAnalysis.isProcessing && spiritAnalysis.progress > 0 && (
+          {!spiritAnalysis?.isProcessing && spiritAnalysis?.progress > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1337,7 +1353,7 @@ export default function SubcontractorManagementPage() {
                 <p className="text-gray-600">Guided process to assemble and optimize your project team</p>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold text-blue-600">{spiritAnalysis.teamReadiness}%</div>
+                <div className="text-3xl font-bold text-blue-600">{spiritAnalysis?.teamReadiness}%</div>
                 <div className="text-sm text-gray-600">Team Readiness</div>
               </div>
             </div>
@@ -1456,7 +1472,7 @@ export default function SubcontractorManagementPage() {
               Critical Gaps
             </h3>
             <div className="space-y-3">
-              {spiritAnalysis.gaps.critical.map((gap, index) => (
+              {spiritAnalysis?.gaps.critical.map((gap, index) => (
                 <div key={index} className="flex items-center p-3 bg-white rounded-lg border border-red-200">
                   <AlertTriangle className="h-5 w-5 text-red-600 mr-3 flex-shrink-0" />
                   <span className="text-red-800">{gap}</span>
