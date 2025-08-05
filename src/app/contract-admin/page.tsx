@@ -482,6 +482,84 @@ export default function ContractAdminPage() {
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
+      {/* Contract Workspace Header */}
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Contract Workspace</h3>
+            <p className="text-gray-600">Post-Award Management & Administration</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Badge variant="outline" className="text-sm">
+              {currentContract.type.toUpperCase()}
+            </Badge>
+            <Badge variant={currentContract.status === 'active' ? 'default' : 'secondary'}>
+              {currentContract.status.toUpperCase()}
+            </Badge>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <h4 className="font-medium text-gray-900">Contract Details</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Contract Number:</span>
+                <span className="font-medium">{currentContract.number}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Agency:</span>
+                <span className="font-medium">{currentContract.agency}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Contracting Officer:</span>
+                <span className="font-medium">{currentContract.contractingOfficer}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">COR:</span>
+                <span className="font-medium">{currentContract.cor}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-medium text-gray-900">Period of Performance</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Start Date:</span>
+                <span className="font-medium">{currentContract.startDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">End Date:</span>
+                <span className="font-medium">{currentContract.endDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Contract Value:</span>
+                <span className="font-medium">${(currentContract.value / 1000000).toFixed(1)}M</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-medium text-gray-900">Quick Actions</h4>
+            <div className="space-y-2">
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Modification
+              </Button>
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <FileText className="h-4 w-4 mr-2" />
+                Submit Invoice
+              </Button>
+              <Button variant="outline" size="sm" className="w-full justify-start">
+                <Calendar className="h-4 w-4 mr-2" />
+                Schedule Review
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Contracts Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <Card className="card-premium p-4">
@@ -820,8 +898,8 @@ export default function ContractAdminPage() {
       <Card className="card-premium p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Contract Modifications</h3>
-            <p className="text-gray-600">Track changes to contract scope, pricing, or performance period</p>
+            <h3 className="text-lg font-semibold text-gray-900">Contract Modification Tracker</h3>
+            <p className="text-gray-600">Track every modification (SF30s, bilateral/unilateral) with timeline view</p>
           </div>
           <Button className="btn-premium">
             <Plus className="h-4 w-4 mr-2" />
@@ -829,55 +907,103 @@ export default function ContractAdminPage() {
           </Button>
         </div>
 
-        <div className="space-y-4">
-          {modifications.map((mod) => (
-            <div key={mod.id} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div>
-                  <h4 className="font-semibold text-gray-900">{mod.modificationNumber}</h4>
-                  <p className="text-sm text-gray-600">{mod.description}</p>
+        {/* Timeline View */}
+        <div className="space-y-6">
+          {modifications.map((mod, index) => (
+            <div key={mod.id} className="relative">
+              {/* Timeline Line */}
+              {index < modifications.length - 1 && (
+                <div className="absolute left-6 top-12 w-0.5 h-16 bg-gray-300"></div>
+              )}
+              
+              <div className="flex items-start space-x-4">
+                {/* Timeline Dot */}
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
+                  mod.status === 'approved' ? 'bg-green-100' : 
+                  mod.status === 'pending' ? 'bg-yellow-100' : 'bg-red-100'
+                }`}>
+                  <FileText className={`h-6 w-6 ${
+                    mod.status === 'approved' ? 'text-green-600' : 
+                    mod.status === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                  }`} />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={
-                    mod.type === 'bilateral' ? 'default' : 
-                    mod.type === 'unilateral' ? 'secondary' : 'outline'
-                  }>
-                    {mod.type.toUpperCase()}
-                  </Badge>
-                  <Badge variant={mod.status === 'approved' ? 'default' : 'destructive'}>
-                    {mod.status.toUpperCase()}
-                  </Badge>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Effective Date:</span>
-                  <p className="font-semibold">{mod.effectiveDate}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Value:</span>
-                  <p className="font-semibold">${mod.value.toLocaleString()}</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Impact:</span>
-                  <div className="flex space-x-2 mt-1">
-                    {mod.impact.scope && <Badge variant="outline" className="text-xs">Scope</Badge>}
-                    {mod.impact.pricing && <Badge variant="outline" className="text-xs">Pricing</Badge>}
-                    {mod.impact.schedule && <Badge variant="outline" className="text-xs">Schedule</Badge>}
+                {/* Modification Content */}
+                <div className="flex-1 border border-gray-200 rounded-lg p-4 bg-white">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{mod.modificationNumber}</h4>
+                      <p className="text-sm text-gray-600">{mod.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">Effective: {mod.effectiveDate}</p>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant={
+                        mod.type === 'bilateral' ? 'default' : 
+                        mod.type === 'unilateral' ? 'secondary' : 'outline'
+                      }>
+                        {mod.type.toUpperCase()}
+                      </Badge>
+                      <Badge variant={mod.status === 'approved' ? 'default' : 'destructive'}>
+                        {mod.status.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Impact Tags */}
+                  <div className="flex items-center space-x-2 mb-3">
+                    <span className="text-xs text-gray-500">Impact:</span>
+                    {mod.impact.scope && (
+                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                        🔁 Scope changes
+                      </Badge>
+                    )}
+                    {mod.impact.pricing && (
+                      <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                        💰 Pricing changes
+                      </Badge>
+                    )}
+                    {mod.impact.schedule && (
+                      <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
+                        🗓️ Period extensions
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Value:</span>
+                      <p className="font-semibold">${mod.value.toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Documents:</span>
+                      <p className="font-semibold">{mod.documents.length} attached</p>
+                    </div>
+                  </div>
+
+                  {/* Auto Alert */}
+                  {mod.impact.pricing && (
+                    <div className="mt-3 p-2 bg-yellow-50 rounded border-l-4 border-yellow-400">
+                      <p className="text-sm text-yellow-800">
+                        ⚠️ <strong>Auto-alert:</strong> This mod changes CLIN values – update invoice logic?
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-3 flex items-center space-x-2">
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      View Documents
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-1" />
+                      Download SF30
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
                   </div>
                 </div>
-              </div>
-
-              <div className="mt-3 flex items-center space-x-2">
-                <Button variant="outline" size="sm">
-                  <Eye className="h-4 w-4 mr-1" />
-                  View Documents
-                </Button>
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-1" />
-                  Download SF30
-                </Button>
               </div>
             </div>
           ))}
@@ -1126,6 +1252,287 @@ export default function ContractAdminPage() {
     </div>
   )
 
+  const renderGFPTab = () => (
+    <div className="space-y-6">
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Government-Furnished Property (GFP) Log</h3>
+            <p className="text-gray-600">Track equipment or materials loaned by the government</p>
+          </div>
+          <Button className="btn-premium">
+            <Plus className="h-4 w-4 mr-2" />
+            Add GFP Item
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {gfpItems.map((item) => (
+            <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className="font-semibold text-gray-900">{item.item}</h4>
+                  <p className="text-sm text-gray-600">S/N: {item.serialNumber}</p>
+                  <p className="text-sm text-gray-600">{item.description}</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge variant={
+                    item.status === 'in-use' ? 'default' : 
+                    item.status === 'returned' ? 'secondary' : 'outline'
+                  }>
+                    {item.status.toUpperCase()}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs">
+                    {item.condition}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">Received:</span>
+                  <p className="font-semibold">{item.receivedDate}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Location:</span>
+                  <p className="font-semibold">{item.location}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Return Date:</span>
+                  <p className="font-semibold">{item.returnDate || 'TBD'}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center space-x-2">
+                <Button variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-1" />
+                  Upload Return Form
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-1" />
+                  Update Status
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+
+  const renderCloseoutTab = () => (
+    <div className="space-y-6">
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Final Invoice & Contract Closeout Checklist</h3>
+            <p className="text-gray-600">Guide contractors through FAR-compliant closeout steps</p>
+          </div>
+          <Button className="btn-premium">
+            <Download className="h-4 w-4 mr-2" />
+            Export Checklist
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900">Closeout Checklist</h4>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <CheckSquare className="h-4 w-4 text-green-600" />
+                  <span className="text-sm">Final invoice submitted</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Square className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm">GFP returned</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Square className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm">Release of Claims signed (SF 1428)</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Square className="h-4 w-4 text-gray-400" />
+                  <span className="text-sm">Final report submitted</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="font-medium text-gray-900">Warnings & Alerts</h4>
+              <div className="space-y-2">
+                <div className="p-2 bg-yellow-50 rounded border-l-4 border-yellow-400">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ Don't forget WDs or final COR sign-off!
+                  </p>
+                </div>
+                <div className="p-2 bg-red-50 rounded border-l-4 border-red-400">
+                  <p className="text-sm text-red-800">
+                    🚨 GFP due for return in 30 days
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+
+  const renderCPARSTab = () => (
+    <div className="space-y-6">
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">CPARS Performance Prep</h3>
+            <p className="text-gray-600">Help contractors prepare for CPARS evaluations and monitor ratings</p>
+          </div>
+          <Button className="btn-premium">
+            <Plus className="h-4 w-4 mr-2" />
+            Create Self-Assessment
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {cparsReports.map((report) => (
+            <div key={report.id} className="border border-gray-200 rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <h4 className="font-semibold text-gray-900">{report.evaluationPeriod}</h4>
+                  <p className="text-sm text-gray-600">Due: {report.dueDate}</p>
+                </div>
+                <Badge variant={report.status === 'completed' ? 'default' : 'secondary'}>
+                  {report.status.toUpperCase()}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="text-center">
+                  <p className="text-gray-600">Quality</p>
+                  <p className="font-semibold text-lg">{report.ratings.quality}/5</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600">Schedule</p>
+                  <p className="font-semibold text-lg">{report.ratings.schedule}/5</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600">Cost</p>
+                  <p className="font-semibold text-lg">{report.ratings.cost}/5</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-600">Management</p>
+                  <p className="font-semibold text-lg">{report.ratings.management}/5</p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center space-x-2">
+                <Button variant="outline" size="sm">
+                  <Eye className="h-4 w-4 mr-1" />
+                  View Report
+                </Button>
+                <Button variant="outline" size="sm">
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit Assessment
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  )
+
+  const renderVaultTab = () => (
+    <div className="space-y-6">
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Compliance Document Vault</h3>
+            <p className="text-gray-600">Secure archive of all contract-related compliance documents</p>
+          </div>
+          <Button className="btn-premium">
+            <Upload className="h-4 w-4 mr-2" />
+            Upload Document
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-gray-900">Modifications</h4>
+              <Badge variant="outline">12 files</Badge>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">SF30s and contract modifications</p>
+            <Button variant="outline" size="sm" className="w-full">
+              <Eye className="h-4 w-4 mr-1" />
+              View Documents
+            </Button>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-gray-900">Invoices</h4>
+              <Badge variant="outline">8 files</Badge>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">Submitted invoices and payment records</p>
+            <Button variant="outline" size="sm" className="w-full">
+              <Eye className="h-4 w-4 mr-1" />
+              View Documents
+            </Button>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-gray-900">Wage Determinations</h4>
+              <Badge variant="outline">5 files</Badge>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">SCA and DBA compliance documents</p>
+            <Button variant="outline" size="sm" className="w-full">
+              <Eye className="h-4 w-4 mr-1" />
+              View Documents
+            </Button>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-gray-900">Subcontractor Certs</h4>
+              <Badge variant="outline">15 files</Badge>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">Certifications and compliance docs</p>
+            <Button variant="outline" size="sm" className="w-full">
+              <Eye className="h-4 w-4 mr-1" />
+              View Documents
+            </Button>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-gray-900">Property Logs</h4>
+              <Badge variant="outline">3 files</Badge>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">GFP tracking and return forms</p>
+            <Button variant="outline" size="sm" className="w-full">
+              <Eye className="h-4 w-4 mr-1" />
+              View Documents
+            </Button>
+          </div>
+
+          <div className="border border-gray-200 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-medium text-gray-900">CPARS Reports</h4>
+              <Badge variant="outline">4 files</Badge>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">Performance evaluation reports</p>
+            <Button variant="outline" size="sm" className="w-full">
+              <Eye className="h-4 w-4 mr-1" />
+              View Documents
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+
   return (
     <div className="gradient-bg-primary min-h-screen">
       <div className="container-responsive py-6 space-y-6">
@@ -1235,13 +1642,17 @@ export default function ContractAdminPage() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="modifications">Modifications</TabsTrigger>
-            <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
-            <TabsTrigger value="subcontractors">Subcontractors</TabsTrigger>
-            <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-10">
+            <TabsTrigger value="overview">📄 Overview</TabsTrigger>
+            <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
+            <TabsTrigger value="modifications">✍️ Modifications</TabsTrigger>
+            <TabsTrigger value="deliverables">📆 Deliverables</TabsTrigger>
+            <TabsTrigger value="subcontractors">🤝 Subcontractors</TabsTrigger>
+            <TabsTrigger value="invoicing">📥 Invoicing</TabsTrigger>
+            <TabsTrigger value="gfp">📦 GFP Log</TabsTrigger>
+            <TabsTrigger value="closeout">📋 Closeout</TabsTrigger>
+            <TabsTrigger value="cpars">🧾 CPARS</TabsTrigger>
+            <TabsTrigger value="vault">🔐 Vault</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -1266,6 +1677,22 @@ export default function ContractAdminPage() {
 
           <TabsContent value="invoicing" className="space-y-6">
             {renderInvoicingTab()}
+          </TabsContent>
+
+          <TabsContent value="gfp" className="space-y-6">
+            {renderGFPTab()}
+          </TabsContent>
+
+          <TabsContent value="closeout" className="space-y-6">
+            {renderCloseoutTab()}
+          </TabsContent>
+
+          <TabsContent value="cpars" className="space-y-6">
+            {renderCPARSTab()}
+          </TabsContent>
+
+          <TabsContent value="vault" className="space-y-6">
+            {renderVaultTab()}
           </TabsContent>
         </Tabs>
       </div>
