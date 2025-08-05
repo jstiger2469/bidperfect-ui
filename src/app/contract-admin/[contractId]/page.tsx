@@ -50,7 +50,8 @@ import {
   Database,
   Network,
   Server,
-  Cloud
+  Cloud,
+  ListTodo
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -97,6 +98,69 @@ interface ContractModification {
   documents: string[]
 }
 
+interface DeliverableTask {
+  id: string
+  deliverableId: string
+  title: string
+  description: string
+  status: 'unassigned' | 'assigned' | 'in-progress' | 'completed' | 'overdue' | 'blocked'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  assignee?: {
+    id: string
+    name: string
+    email: string
+    role: string
+    avatar: string
+  }
+  assignedDate?: string
+  dueDate: string
+  estimatedHours: number
+  actualHours?: number
+  progress: number
+  dependencies: string[]
+  tags: string[]
+  location?: string
+  calendarEvent?: {
+    id: string
+    title: string
+    startTime: string
+    endTime: string
+    calendar: 'outlook' | 'google' | 'teams' | 'internal'
+  }
+  attachments: {
+    name: string
+    type: string
+    size: string
+    uploadedBy: string
+    uploadedDate: string
+  }[]
+  comments: {
+    id: string
+    author: string
+    content: string
+    timestamp: string
+    type: 'internal' | 'external' | 'assignee'
+  }[]
+  timeTracking: {
+    startTime?: string
+    endTime?: string
+    breaks: number
+    totalTime: number
+  }
+  qualityChecklist: {
+    item: string
+    completed: boolean
+    completedBy?: string
+    completedDate?: string
+  }[]
+  automation: {
+    autoAssign: boolean
+    autoRemind: boolean
+    autoEscalate: boolean
+    calendarSync: boolean
+  }
+}
+
 interface Deliverable {
   id: string
   contractId: string
@@ -123,6 +187,21 @@ interface Deliverable {
   approvedDate?: string
   rejectionReason?: string
   resubmissionDate?: string
+  tasks: DeliverableTask[]
+  completionGuidance: {
+    isComplete: boolean
+    completionDate?: string
+    nextSteps: string[]
+    recommendations: string[]
+    lessonsLearned: string[]
+    followUpActions: string[]
+    successMetrics: {
+      onTime: boolean
+      onBudget: boolean
+      qualityMet: boolean
+      stakeholderSatisfied: boolean
+    }
+  }
   attachments: {
     name: string
     type: string
@@ -269,6 +348,10 @@ export default function ContractWorkspacePage() {
   const [selectedDeliverable, setSelectedDeliverable] = useState<string | null>(null)
   const [showDeliverableModal, setShowDeliverableModal] = useState(false)
   const [showAssignmentModal, setShowAssignmentModal] = useState(false)
+  const [showTaskModal, setShowTaskModal] = useState(false)
+  const [selectedTask, setSelectedTask] = useState<string | null>(null)
+  const [taskFilter, setTaskFilter] = useState('all')
+  const [showCalendarIntegration, setShowCalendarIntegration] = useState(false)
   const [deliverableTemplates] = useState<DeliverableTemplate[]>([
     {
       id: 't-001',
@@ -446,6 +529,174 @@ export default function ContractWorkspacePage() {
         autoEscalation: true,
         autoApproval: false,
         integrationPoints: ['ERP', 'Quality Management System']
+      },
+      tasks: [
+        {
+          id: 't-001-001',
+          deliverableId: 'd-001',
+          title: 'Gather Performance Metrics',
+          description: 'Collect quality metrics, schedule adherence data, and cost performance indicators',
+          status: 'completed',
+          priority: 'high',
+          assignee: {
+            id: 'user-001',
+            name: 'Mike Davis',
+            email: 'mike.davis@company.com',
+            role: 'Project Manager',
+            avatar: '/avatars/mike-davis.jpg'
+          },
+          assignedDate: '2025-08-25',
+          dueDate: '2025-08-28',
+          estimatedHours: 4,
+          actualHours: 3.5,
+          progress: 100,
+          dependencies: [],
+          tags: ['data-collection', 'metrics'],
+          location: 'Office',
+          calendarEvent: {
+            id: 'cal-001',
+            title: 'Gather Performance Metrics - Monthly Report',
+            startTime: '2025-08-28T09:00:00Z',
+            endTime: '2025-08-28T13:00:00Z',
+            calendar: 'outlook'
+          },
+          attachments: [
+            {
+              name: 'Performance_Data.xlsx',
+              type: 'spreadsheet',
+              size: '1.2 MB',
+              uploadedBy: 'Mike Davis',
+              uploadedDate: '2025-08-28'
+            }
+          ],
+          comments: [
+            {
+              id: 'c-t-001',
+              author: 'Sarah Johnson',
+              content: 'Quality metrics look good, please include subcontractor performance data',
+              timestamp: '2025-08-28T10:30:00Z',
+              type: 'cor'
+            }
+          ],
+          timeTracking: {
+            startTime: '2025-08-28T09:00:00Z',
+            endTime: '2025-08-28T12:30:00Z',
+            breaks: 0.5,
+            totalTime: 3.5
+          },
+          qualityChecklist: [
+            { item: 'Data accuracy verified', completed: true, completedBy: 'Mike Davis', completedDate: '2025-08-28' },
+            { item: 'Metrics validated', completed: true, completedBy: 'Mike Davis', completedDate: '2025-08-28' },
+            { item: 'Stakeholder review complete', completed: true, completedBy: 'Sarah Johnson', completedDate: '2025-08-28' }
+          ],
+          automation: {
+            autoAssign: true,
+            autoRemind: true,
+            autoEscalate: false,
+            calendarSync: true
+          }
+        },
+        {
+          id: 't-001-002',
+          deliverableId: 'd-001',
+          title: 'Draft Report Content',
+          description: 'Write comprehensive report content including analysis and recommendations',
+          status: 'in-progress',
+          priority: 'high',
+          assignee: {
+            id: 'user-001',
+            name: 'Mike Davis',
+            email: 'mike.davis@company.com',
+            role: 'Project Manager',
+            avatar: '/avatars/mike-davis.jpg'
+          },
+          assignedDate: '2025-08-28',
+          dueDate: '2025-08-30',
+          estimatedHours: 6,
+          actualHours: 2,
+          progress: 65,
+          dependencies: ['t-001-001'],
+          tags: ['writing', 'analysis'],
+          location: 'Office',
+          attachments: [],
+          comments: [],
+          timeTracking: {
+            startTime: '2025-08-29T09:00:00Z',
+            breaks: 0.5,
+            totalTime: 2
+          },
+          qualityChecklist: [
+            { item: 'Executive summary written', completed: true, completedBy: 'Mike Davis', completedDate: '2025-08-29' },
+            { item: 'Performance analysis complete', completed: false },
+            { item: 'Recommendations drafted', completed: false },
+            { item: 'Stakeholder review scheduled', completed: false }
+          ],
+          automation: {
+            autoAssign: true,
+            autoRemind: true,
+            autoEscalate: true,
+            calendarSync: true
+          }
+        },
+        {
+          id: 't-001-003',
+          deliverableId: 'd-001',
+          title: 'Final Review and Submission',
+          description: 'Final review with stakeholders and submission to COR',
+          status: 'unassigned',
+          priority: 'critical',
+          dueDate: '2025-08-31',
+          estimatedHours: 2,
+          progress: 0,
+          dependencies: ['t-001-002'],
+          tags: ['review', 'submission'],
+          location: 'Office',
+          attachments: [],
+          comments: [],
+          timeTracking: {
+            breaks: 0,
+            totalTime: 0
+          },
+          qualityChecklist: [
+            { item: 'Content review complete', completed: false },
+            { item: 'Stakeholder approval received', completed: false },
+            { item: 'Document formatting final', completed: false },
+            { item: 'Submission to COR', completed: false }
+          ],
+          automation: {
+            autoAssign: false,
+            autoRemind: true,
+            autoEscalate: true,
+            calendarSync: true
+          }
+        }
+      ],
+      completionGuidance: {
+        isComplete: false,
+        nextSteps: [
+          'Complete report drafting (Task 2)',
+          'Schedule stakeholder review meeting',
+          'Prepare final submission package',
+          'Submit to COR for approval'
+        ],
+        recommendations: [
+          'Include visual charts for better data presentation',
+          'Add subcontractor performance comparison',
+          'Highlight cost savings achieved',
+          'Recommend process improvements'
+        ],
+        lessonsLearned: [],
+        followUpActions: [
+          'Schedule next month\'s data collection',
+          'Update performance tracking templates',
+          'Review and update metrics as needed'
+        ],
+        successMetrics: {
+          onTime: true,
+          onBudget: true,
+          qualityMet: false,
+          stakeholderSatisfied: false
+        }
       }
     }),
     createDeliverable({
@@ -671,6 +922,59 @@ export default function ContractWorkspacePage() {
       comments: 'Excellent performance across all evaluation factors'
     }
   ])
+
+  // Task Management Functions
+  const assignTask = (taskId: string, assigneeId: string) => {
+    // Implementation for task assignment
+    console.log(`Assigning task ${taskId} to ${assigneeId}`)
+  }
+
+  const addToCalendar = (taskId: string, calendarType: 'outlook' | 'google' | 'teams' | 'internal') => {
+    // Implementation for calendar integration
+    console.log(`Adding task ${taskId} to ${calendarType} calendar`)
+  }
+
+  const updateTaskProgress = (taskId: string, progress: number) => {
+    // Implementation for updating task progress
+    console.log(`Updating task ${taskId} progress to ${progress}%`)
+  }
+
+  const getTaskStats = (deliverableId: string) => {
+    const deliverable = deliverables.find(d => d.id === deliverableId)
+    if (!deliverable) return { total: 0, completed: 0, inProgress: 0, unassigned: 0 }
+    
+    const tasks = deliverable.tasks
+    return {
+      total: tasks.length,
+      completed: tasks.filter(t => t.status === 'completed').length,
+      inProgress: tasks.filter(t => t.status === 'in-progress').length,
+      unassigned: tasks.filter(t => t.status === 'unassigned').length
+    }
+  }
+
+  const getCompletionGuidance = (deliverableId: string) => {
+    const deliverable = deliverables.find(d => d.id === deliverableId)
+    if (!deliverable) return null
+    
+    const taskStats = getTaskStats(deliverableId)
+    const isComplete = taskStats.completed === taskStats.total && taskStats.total > 0
+    
+    if (isComplete) {
+      return {
+        message: "🎉 Deliverable completed successfully!",
+        nextSteps: deliverable.completionGuidance.nextSteps,
+        recommendations: deliverable.completionGuidance.recommendations,
+        followUpActions: deliverable.completionGuidance.followUpActions
+      }
+    } else {
+      return {
+        message: "📋 Continue working on remaining tasks",
+        nextSteps: deliverable.completionGuidance.nextSteps,
+        recommendations: deliverable.completionGuidance.recommendations,
+        followUpActions: []
+      }
+    }
+  }
 
   // Spirit AI Analysis
   const startSpiritAnalysis = async () => {
@@ -1175,6 +1479,44 @@ export default function ContractWorkspacePage() {
                 </div>
               </div>
 
+              {/* Task Overview */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Tasks</span>
+                  <span className="text-xs text-gray-500">
+                    {getTaskStats(deliverable.id).completed}/{getTaskStats(deliverable.id).total} completed
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {deliverable.tasks.slice(0, 2).map((task) => (
+                    <div key={task.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-xs">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          task.status === 'completed' ? 'bg-green-500' :
+                          task.status === 'in-progress' ? 'bg-blue-500' :
+                          task.status === 'unassigned' ? 'bg-gray-400' : 'bg-red-500'
+                        }`} />
+                        <span className="font-medium">{task.title}</span>
+                        {task.assignee && (
+                          <span className="text-gray-500">• {task.assignee.name}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-gray-500">{task.progress}%</span>
+                        {task.calendarEvent && (
+                          <Calendar className="h-3 w-3 text-blue-500" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {deliverable.tasks.length > 2 && (
+                    <div className="text-xs text-blue-600 font-medium cursor-pointer hover:underline">
+                      +{deliverable.tasks.length - 2} more tasks
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Progress and Metrics */}
               <div className="space-y-3 mb-4">
                 <div className="flex items-center justify-between text-sm">
@@ -1226,6 +1568,17 @@ export default function ContractWorkspacePage() {
                   <Eye className="h-4 w-4 mr-1" />
                   View Details
                 </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setSelectedDeliverable(deliverable.id)
+                    setShowTaskModal(true)
+                  }}
+                >
+                  <ListTodo className="h-4 w-4 mr-1" />
+                  Tasks
+                </Button>
                 <Button variant="outline" size="sm">
                   <Upload className="h-4 w-4 mr-1" />
                   Upload
@@ -1245,6 +1598,143 @@ export default function ContractWorkspacePage() {
             </Card>
           ))}
         </div>
+
+        {/* Completion Guidance */}
+        <Card className="card-premium p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-600 rounded-full flex items-center justify-center">
+              <CheckCircle className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Completion Guidance & Next Steps</h3>
+              <p className="text-sm text-gray-600">Spirit AI-powered guidance for deliverable completion</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Completed Deliverables */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-green-600 flex items-center">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Completed Deliverables
+              </h4>
+              {deliverables.filter(d => d.status === 'completed').map(deliverable => {
+                const guidance = getCompletionGuidance(deliverable.id)
+                return (
+                  <div key={deliverable.id} className="p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h5 className="font-medium text-green-800 mb-2">{deliverable.title}</h5>
+                    <p className="text-sm text-green-700 mb-3">{guidance?.message}</p>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-xs font-medium text-green-600">Next Steps:</span>
+                        <ul className="text-xs text-green-700 mt-1 space-y-1">
+                          {guidance?.nextSteps.slice(0, 2).map((step, index) => (
+                            <li key={index} className="flex items-start">
+                              <div className="w-1 h-1 bg-green-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                              {step}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-green-600">Follow-up Actions:</span>
+                        <ul className="text-xs text-green-700 mt-1 space-y-1">
+                          {guidance?.followUpActions.slice(0, 2).map((action, index) => (
+                            <li key={index} className="flex items-start">
+                              <div className="w-1 h-1 bg-green-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                              {action}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* In Progress Deliverables */}
+            <div className="space-y-4">
+              <h4 className="font-semibold text-blue-600 flex items-center">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                In Progress Deliverables
+              </h4>
+              {deliverables.filter(d => d.status === 'in-progress').map(deliverable => {
+                const guidance = getCompletionGuidance(deliverable.id)
+                const taskStats = getTaskStats(deliverable.id)
+                return (
+                  <div key={deliverable.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h5 className="font-medium text-blue-800 mb-2">{deliverable.title}</h5>
+                    <p className="text-sm text-blue-700 mb-3">{guidance?.message}</p>
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-blue-600">Task Progress</span>
+                        <span className="text-blue-700">{taskStats.completed}/{taskStats.total} completed</span>
+                      </div>
+                      <Progress value={(taskStats.completed / taskStats.total) * 100} className="h-2" />
+                    </div>
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-xs font-medium text-blue-600">Next Steps:</span>
+                        <ul className="text-xs text-blue-700 mt-1 space-y-1">
+                          {guidance?.nextSteps.slice(0, 3).map((step, index) => (
+                            <li key={index} className="flex items-start">
+                              <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                              {step}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <div>
+                        <span className="text-xs font-medium text-blue-600">Recommendations:</span>
+                        <ul className="text-xs text-blue-700 mt-1 space-y-1">
+                          {guidance?.recommendations.slice(0, 2).map((rec, index) => (
+                            <li key={index} className="flex items-start">
+                              <div className="w-1 h-1 bg-blue-500 rounded-full mt-1.5 mr-2 flex-shrink-0"></div>
+                              {rec}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* You're Not Alone Section */}
+          <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg border border-purple-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-600 rounded-full flex items-center justify-center">
+                <Users className="h-4 w-4 text-white" />
+              </div>
+              <h4 className="font-semibold text-purple-800">You're Not Alone - Spirit AI is Here to Help</h4>
+            </div>
+            <p className="text-sm text-purple-700 mb-3">
+              Our AI assistant provides real-time guidance, automates routine tasks, and ensures you never miss a deadline. 
+              Get personalized recommendations, automated reminders, and expert-level insights for every deliverable.
+            </p>
+            <div className="flex items-center space-x-4 text-xs text-purple-600">
+              <span className="flex items-center">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Automated task assignment
+              </span>
+              <span className="flex items-center">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Calendar integration
+              </span>
+              <span className="flex items-center">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Progress tracking
+              </span>
+              <span className="flex items-center">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Completion guidance
+              </span>
+            </div>
+          </div>
+        </Card>
 
         {/* No Results */}
         {filteredDeliverables.length === 0 && (
