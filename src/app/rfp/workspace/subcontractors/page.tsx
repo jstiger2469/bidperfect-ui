@@ -847,23 +847,28 @@ export default function SubcontractorManagementPage() {
             </div>
             <h3 className="font-semibold text-gray-900">Dynamic Spirit AI Analysis</h3>
           </div>
-          <Button 
-            onClick={() => startTeamAnalysis(rfpId)}
-            disabled={spiritAnalysis?.isProcessing}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-          >
-            {spiritAnalysis?.isProcessing ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4 mr-2" />
-                Start Analysis
-              </>
-            )}
-          </Button>
+          <div className="flex items-center space-x-4">
+            <div className="text-right">
+              <div className="text-xs text-gray-500">Step 1 of 5</div>
+            </div>
+            <Button 
+              onClick={() => startTeamAnalysis(rfpId)}
+              disabled={spiritAnalysis?.isProcessing}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            >
+              {spiritAnalysis?.isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Start Analysis
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         
         {spiritAnalysis?.isProcessing && (
@@ -1977,6 +1982,7 @@ export default function SubcontractorManagementPage() {
               ${subcontractors.reduce((total, sub) => total + sub.assignedWork.estimatedValue, 0).toLocaleString()}
             </div>
             <div className="text-sm text-gray-600">Total Assigned Value</div>
+            <div className="text-xs text-gray-500 mt-1">Step 3 of 5</div>
           </div>
         </div>
       </Card>
@@ -2365,14 +2371,18 @@ export default function SubcontractorManagementPage() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="scope">Scope</TabsTrigger>
+                <TabsTrigger value="team">Team Assembly</TabsTrigger>
+                <TabsTrigger value="scope">Scope Assignment</TabsTrigger>
                 <TabsTrigger value="bid-review">Bid Review</TabsTrigger>
                 <TabsTrigger value="pricing">Pricing</TabsTrigger>
-                <TabsTrigger value="team">Team Assembly</TabsTrigger>
               </TabsList>
               
               <TabsContent value="overview" className="mt-6">
                 {renderOverviewTab()}
+              </TabsContent>
+              
+              <TabsContent value="team" className="mt-6">
+                {renderTeamAssemblyTab()}
               </TabsContent>
               
               <TabsContent value="scope" className="mt-6">
@@ -2385,10 +2395,6 @@ export default function SubcontractorManagementPage() {
               
               <TabsContent value="pricing" className="mt-6">
                 {renderPricingTab()}
-              </TabsContent>
-              
-              <TabsContent value="team" className="mt-6">
-                {renderTeamAssemblyTab()}
               </TabsContent>
             </Tabs>
           </div>
