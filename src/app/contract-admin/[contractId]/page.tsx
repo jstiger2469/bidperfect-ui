@@ -949,7 +949,7 @@ export default function ContractWorkspacePage() {
               View Details
             </Button>
             <Button variant="outline" size="sm">
-              <ListTodo className="h-4 w-4 mr-1" />
+              <ClipboardList className="h-4 w-4 mr-1" />
               Tasks
             </Button>
             <Button variant="outline" size="sm">
@@ -994,7 +994,7 @@ export default function ContractWorkspacePage() {
               View Details
             </Button>
             <Button variant="outline" size="sm">
-              <ListTodo className="h-4 w-4 mr-1" />
+              <ClipboardList className="h-4 w-4 mr-1" />
               Tasks
             </Button>
             <Button variant="outline" size="sm">
