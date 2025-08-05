@@ -51,7 +51,6 @@ import {
   Network,
   Server,
   Cloud,
-  ListTodo,
   X,
   Filter,
   Grid3X3,
@@ -549,6 +548,469 @@ export default function ContractWorkspacePage() {
     return filtered
   }
 
+  // Dashboard Tab
+  const renderDashboardTab = () => (
+    <div className="space-y-6">
+      {/* Spirit AI Analysis */}
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <Brain className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Spirit AI Contract Health Analysis</h3>
+              <p className="text-sm text-gray-600">Real-time contract performance and compliance monitoring</p>
+            </div>
+          </div>
+          <Button className="btn-premium">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Run Analysis
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="space-y-3">
+            <h4 className="font-semibold text-green-600 flex items-center">
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Insights
+            </h4>
+            <ul className="space-y-2">
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                Contract performance is above target with 92% overall rating
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                Budget burn rate of 35% is on track for contract completion
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                All subcontractors are compliant with flow-down requirements
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-semibold text-blue-600 flex items-center">
+              <Target className="h-4 w-4 mr-2" />
+              Recommendations
+            </h4>
+            <ul className="space-y-2">
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                Schedule quarterly performance review with COR
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                Prepare CPARS self-assessment for Q2 evaluation
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                Review subcontractor performance metrics monthly
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-semibold text-orange-600 flex items-center">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              Warnings
+            </h4>
+            <ul className="space-y-2">
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                Monthly performance report due in 5 days
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                Quarterly quality review requires COR coordination
+              </li>
+              <li className="text-sm text-gray-700 flex items-start">
+                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full mt-2 mr-2 flex-shrink-0"></div>
+                Monitor invoice payment timelines for prompt pay compliance
+              </li>
+            </ul>
+          </div>
+        </div>
+      </Card>
+
+      {/* Contract Health Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="card-premium p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Performance</h3>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-gray-900">{contract.number}</h4>
+                  <p className="text-sm text-gray-600">{contract.title}</p>
+                </div>
+                <Badge variant={contract.status === 'active' ? 'default' : 'secondary'}>
+                  {contract.status.toUpperCase()}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{contract.performance.overall}%</div>
+                  <div className="text-sm text-gray-600">Overall Rating</div>
+                </div>
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{contract.budget.burnRate}%</div>
+                  <div className="text-sm text-gray-600">Budget Burn Rate</div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Quality</span>
+                  <span className="font-semibold">{contract.performance.quality}%</span>
+                </div>
+                <Progress value={contract.performance.quality} className="h-2" />
+                
+                <div className="flex justify-between text-sm">
+                  <span>Schedule</span>
+                  <span className="font-semibold">{contract.performance.schedule}%</span>
+                </div>
+                <Progress value={contract.performance.schedule} className="h-2" />
+                
+                <div className="flex justify-between text-sm">
+                  <span>Cost</span>
+                  <span className="font-semibold">{contract.performance.cost}%</span>
+                </div>
+                <Progress value={contract.performance.cost} className="h-2" />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="card-premium p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Financial Health</h3>
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Total Budget</span>
+                <span className="font-semibold">${(contract.budget.total / 1000000).toFixed(1)}M</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Spent</span>
+                <span className="font-semibold text-orange-600">${(contract.budget.spent / 1000000).toFixed(1)}M</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Remaining</span>
+                <span className="font-semibold text-green-600">${(contract.budget.remaining / 1000000).toFixed(1)}M</span>
+              </div>
+              
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                <h5 className="font-medium text-blue-900 mb-1">Budget Status</h5>
+                <p className="text-sm text-blue-800">
+                  {contract.budget.burnRate < 50 ? 'On track' : 'Monitor closely'} - {contract.budget.burnRate}% spent
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <Card className="card-premium p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Button variant="outline" className="btn-ghost-premium h-auto p-4 flex flex-col items-center">
+            <Upload className="h-6 w-6 mb-2" />
+            <span className="text-sm">Upload Mod</span>
+          </Button>
+          <Button variant="outline" className="btn-ghost-premium h-auto p-4 flex flex-col items-center">
+            <FileText className="h-6 w-6 mb-2" />
+            <span className="text-sm">Create Report</span>
+          </Button>
+          <Button variant="outline" className="btn-ghost-premium h-auto p-4 flex flex-col items-center">
+            <DollarSign className="h-6 w-6 mb-2" />
+            <span className="text-sm">Submit Invoice</span>
+          </Button>
+          <Button variant="outline" className="btn-ghost-premium h-auto p-4 flex flex-col items-center">
+            <Calendar className="h-6 w-6 mb-2" />
+            <span className="text-sm">Schedule Review</span>
+          </Button>
+        </div>
+      </Card>
+    </div>
+  )
+
+  // Modifications Tab
+  const renderModificationsTab = () => (
+    <div className="space-y-6">
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Contract Modification Tracker</h3>
+            <p className="text-gray-600">Track every modification (SF30s, bilateral/unilateral) with timeline view</p>
+          </div>
+          <Button className="btn-premium">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Modification
+          </Button>
+        </div>
+
+        {/* Timeline View */}
+        <div className="space-y-6">
+          <div className="relative">
+            <div className="flex items-start space-x-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <FileText className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="flex-1 border border-gray-200 rounded-lg p-4 bg-white">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-semibold text-gray-900">P00001</h4>
+                    <p className="text-sm text-gray-600">Additional HVAC units for Building 3</p>
+                    <p className="text-xs text-gray-500 mt-1">Effective: 2025-03-15</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="default">BILATERAL</Badge>
+                    <Badge variant="default">APPROVED</Badge>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2 mb-3">
+                  <span className="text-xs text-gray-500">Impact:</span>
+                  <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                    🔁 Scope changes
+                  </Badge>
+                  <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                    💰 Pricing changes
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">Value:</span>
+                    <p className="font-semibold">$150,000</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Documents:</span>
+                    <p className="font-semibold">2 attached</p>
+                  </div>
+                </div>
+
+                <div className="mt-3 p-2 bg-yellow-50 rounded border-l-4 border-yellow-400">
+                  <p className="text-sm text-yellow-800">
+                    ⚠️ <strong>Auto-alert:</strong> This mod changes CLIN values – update invoice logic?
+                  </p>
+                </div>
+
+                <div className="mt-3 flex items-center space-x-2">
+                  <Button variant="outline" size="sm">
+                    <Eye className="h-4 w-4 mr-1" />
+                    View Documents
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-1" />
+                    Download SF30
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+
+  // Deliverables Tab
+  const renderDeliverablesTab = () => (
+    <div className="space-y-6">
+      {/* Spirit AI Deliverable Analysis */}
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+              <Brain className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Spirit AI Deliverable Intelligence</h3>
+              <p className="text-sm text-gray-600">Real-time deliverable performance and risk analysis</p>
+            </div>
+          </div>
+          <Button className="btn-premium">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Run Analysis
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-red-600 font-medium">Overdue</p>
+                <p className="text-2xl font-bold text-red-700">1</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-500" />
+            </div>
+          </div>
+          <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-600 font-medium">Critical</p>
+                <p className="text-2xl font-bold text-orange-700">2</p>
+              </div>
+              <Target className="h-8 w-8 text-orange-500" />
+            </div>
+          </div>
+          <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-600 font-medium">Completed</p>
+                <p className="text-2xl font-bold text-green-700">1</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-500" />
+            </div>
+          </div>
+          <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-600 font-medium">On Track</p>
+                <p className="text-2xl font-bold text-blue-700">2</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-blue-500" />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Search and Filter */}
+      <Card className="card-premium p-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Search deliverables..."
+                className="pl-10 w-64"
+              />
+            </div>
+            <select className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in-progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="overdue">Overdue</option>
+            </select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="btn-ghost-premium">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button className="btn-premium">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Deliverable
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Deliverables Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="card-premium p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <div className="flex items-center space-x-2 mb-2">
+                <h4 className="font-semibold text-gray-900">Monthly Performance Report</h4>
+                <Badge variant="default" className="text-xs">HIGH</Badge>
+                <Badge variant="outline" className="text-xs">PENDING</Badge>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">Comprehensive monthly status report covering quality metrics, schedule adherence, cost performance, and subcontractor performance metrics</p>
+              <div className="flex items-center space-x-4 text-xs text-gray-500">
+                <span>Assigned: Mike Davis</span>
+                <span>Due: 2025-08-31</span>
+                <span>Type: report</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Progress</span>
+              <span className="font-semibold">65%</span>
+            </div>
+            <Progress value={65} className="h-2" />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm">
+              <Eye className="h-4 w-4 mr-1" />
+              View Details
+            </Button>
+            <Button variant="outline" size="sm">
+              <ListTodo className="h-4 w-4 mr-1" />
+              Tasks
+            </Button>
+            <Button variant="outline" size="sm">
+              <Upload className="h-4 w-4 mr-1" />
+              Upload
+            </Button>
+            <Button variant="outline" size="sm">
+              <MessageSquare className="h-4 w-4 mr-1" />
+              Comments
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="card-premium p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              <div className="flex items-center space-x-2 mb-2">
+                <h4 className="font-semibold text-gray-900">Quality Control Plan Implementation</h4>
+                <Badge variant="destructive" className="text-xs">CRITICAL</Badge>
+                <Badge variant="secondary" className="text-xs">IN-PROGRESS</Badge>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">Implementation and documentation of quality control procedures for HVAC maintenance services</p>
+              <div className="flex items-center space-x-4 text-xs text-gray-500">
+                <span>Assigned: Sarah Johnson</span>
+                <span>Due: 2025-09-15</span>
+                <span>Type: milestone</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">Progress</span>
+              <span className="font-semibold">75%</span>
+            </div>
+            <Progress value={75} className="h-2" />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm">
+              <Eye className="h-4 w-4 mr-1" />
+              View Details
+            </Button>
+            <Button variant="outline" size="sm">
+              <ListTodo className="h-4 w-4 mr-1" />
+              Tasks
+            </Button>
+            <Button variant="outline" size="sm">
+              <Upload className="h-4 w-4 mr-1" />
+              Upload
+            </Button>
+            <Button variant="outline" size="sm">
+              <MessageSquare className="h-4 w-4 mr-1" />
+              Comments
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+
   const renderSubcontractorsTab = () => {
     const stats = getSubcontractorStats()
     const filteredSubcontractors = getFilteredSubcontractors()
@@ -988,6 +1450,18 @@ export default function ContractWorkspacePage() {
             <TabsTrigger value="cpars" className="text-xs flex-shrink-0">CPARS</TabsTrigger>
             <TabsTrigger value="vault" className="text-xs flex-shrink-0">Vault</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            {renderDashboardTab()}
+          </TabsContent>
+
+          <TabsContent value="modifications" className="space-y-6">
+            {renderModificationsTab()}
+          </TabsContent>
+
+          <TabsContent value="deliverables" className="space-y-6">
+            {renderDeliverablesTab()}
+          </TabsContent>
 
           <TabsContent value="subcontractors" className="space-y-6">
             {renderSubcontractorsTab()}
