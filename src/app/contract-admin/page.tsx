@@ -176,6 +176,9 @@ interface CPARSReport {
 
 export default function ContractAdminPage() {
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [selectedContract, setSelectedContract] = useState<string>('c-001')
+  const [contractFilter, setContractFilter] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
   const [adminProgress, setAdminProgress] = useState(0)
   const [spiritAnalysis, setSpiritAnalysis] = useState({
     isProcessing: false,
@@ -185,7 +188,7 @@ export default function ContractAdminPage() {
     warnings: [] as string[]
   })
 
-  // Mock Data
+  // Mock Data - Multiple Contracts
   const [contracts] = useState<Contract[]>([
     {
       id: 'c-001',
@@ -210,6 +213,106 @@ export default function ContractAdminPage() {
         schedule: 88,
         cost: 92,
         overall: 92
+      }
+    },
+    {
+      id: 'c-002',
+      number: 'W912P8-25-C-0002',
+      title: 'IT Infrastructure Support',
+      agency: 'Department of Defense',
+      value: 1800000,
+      startDate: '2025-02-01',
+      endDate: '2026-01-31',
+      status: 'active',
+      type: 'cost-plus',
+      contractingOfficer: 'Mike Johnson',
+      cor: 'Lisa Chen',
+      budget: {
+        total: 1800000,
+        spent: 540000,
+        remaining: 1260000,
+        burnRate: 30
+      },
+      performance: {
+        quality: 88,
+        schedule: 92,
+        cost: 85,
+        overall: 88
+      }
+    },
+    {
+      id: 'c-003',
+      number: 'W912P8-25-C-0003',
+      title: 'Facility Security Services',
+      agency: 'Department of Homeland Security',
+      value: 3200000,
+      startDate: '2024-11-01',
+      endDate: '2025-10-31',
+      status: 'active',
+      type: 'fixed-price',
+      contractingOfficer: 'David Wilson',
+      cor: 'Robert Brown',
+      budget: {
+        total: 3200000,
+        spent: 2560000,
+        remaining: 640000,
+        burnRate: 80
+      },
+      performance: {
+        quality: 92,
+        schedule: 95,
+        cost: 90,
+        overall: 92
+      }
+    },
+    {
+      id: 'c-004',
+      number: 'W912P8-25-C-0004',
+      title: 'Environmental Consulting',
+      agency: 'Environmental Protection Agency',
+      value: 950000,
+      startDate: '2025-03-01',
+      endDate: '2026-02-28',
+      status: 'pending',
+      type: 'time-materials',
+      contractingOfficer: 'Jennifer Davis',
+      cor: 'Thomas Anderson',
+      budget: {
+        total: 950000,
+        spent: 0,
+        remaining: 950000,
+        burnRate: 0
+      },
+      performance: {
+        quality: 0,
+        schedule: 0,
+        cost: 0,
+        overall: 0
+      }
+    },
+    {
+      id: 'c-005',
+      number: 'W912P8-25-C-0005',
+      title: 'Training Program Development',
+      agency: 'Department of Veterans Affairs',
+      value: 750000,
+      startDate: '2024-08-01',
+      endDate: '2025-07-31',
+      status: 'completed',
+      type: 'fixed-price',
+      contractingOfficer: 'Patricia Garcia',
+      cor: 'Michael Taylor',
+      budget: {
+        total: 750000,
+        spent: 750000,
+        remaining: 0,
+        burnRate: 100
+      },
+      performance: {
+        quality: 96,
+        schedule: 94,
+        cost: 98,
+        overall: 96
       }
     }
   ])
@@ -322,6 +425,17 @@ export default function ContractAdminPage() {
     }
   ])
 
+  // Contract filtering and selection
+  const filteredContracts = contracts.filter(contract => {
+    const matchesFilter = contractFilter === 'all' || contract.status === contractFilter
+    const matchesSearch = contract.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contract.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         contract.agency.toLowerCase().includes(searchTerm.toLowerCase())
+    return matchesFilter && matchesSearch
+  })
+
+  const currentContract = contracts.find(c => c.id === selectedContract) || contracts[0]
+
   // Spirit AI Analysis
   const startSpiritAnalysis = async () => {
     setSpiritAnalysis(prev => ({ ...prev, isProcessing: true, progress: 0 }))
@@ -365,6 +479,148 @@ export default function ContractAdminPage() {
       ]
     })
   }
+
+  const renderOverviewTab = () => (
+    <div className="space-y-6">
+      {/* Contracts Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <Card className="card-premium p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Contracts</p>
+              <p className="text-2xl font-bold text-gray-900">{contracts.length}</p>
+            </div>
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+              <FileText className="h-5 w-5 text-blue-600" />
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="card-premium p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Active Contracts</p>
+              <p className="text-2xl font-bold text-green-600">
+                {contracts.filter(c => c.status === 'active').length}
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="card-premium p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Value</p>
+              <p className="text-2xl font-bold text-purple-600">
+                ${(contracts.reduce((total, c) => total + c.value, 0) / 1000000).toFixed(1)}M
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+              <DollarSign className="h-5 w-5 text-purple-600" />
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="card-premium p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Avg Performance</p>
+              <p className="text-2xl font-bold text-orange-600">
+                {Math.round(contracts.reduce((total, c) => total + c.performance.overall, 0) / contracts.length)}%
+              </p>
+            </div>
+            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+              <TrendingUp className="h-5 w-5 text-orange-600" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* All Contracts Table */}
+      <Card className="card-premium p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">All Contracts</h3>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-600">Showing {filteredContracts.length} of {contracts.length} contracts</span>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left p-3">Contract</th>
+                <th className="text-left p-3">Agency</th>
+                <th className="text-right p-3">Value</th>
+                <th className="text-center p-3">Status</th>
+                <th className="text-center p-3">Performance</th>
+                <th className="text-center p-3">Burn Rate</th>
+                <th className="text-center p-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredContracts.map((contract) => (
+                <tr 
+                  key={contract.id} 
+                  className={`border-b hover:bg-gray-50 cursor-pointer ${
+                    selectedContract === contract.id ? 'bg-blue-50' : ''
+                  }`}
+                  onClick={() => setSelectedContract(contract.id)}
+                >
+                  <td className="p-3">
+                    <div>
+                      <p className="font-medium text-gray-900">{contract.number}</p>
+                      <p className="text-sm text-gray-600">{contract.title}</p>
+                    </div>
+                  </td>
+                  <td className="p-3 text-gray-600">{contract.agency}</td>
+                  <td className="p-3 text-right font-semibold">
+                    ${(contract.value / 1000000).toFixed(1)}M
+                  </td>
+                  <td className="p-3 text-center">
+                    <Badge variant={
+                      contract.status === 'active' ? 'default' : 
+                      contract.status === 'completed' ? 'secondary' : 'outline'
+                    }>
+                      {contract.status.toUpperCase()}
+                    </Badge>
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center">
+                      <span className="font-semibold text-blue-600">{contract.performance.overall}%</span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center">
+                      <span className={`font-semibold ${
+                        contract.budget.burnRate > 80 ? 'text-red-600' :
+                        contract.budget.burnRate > 60 ? 'text-orange-600' : 'text-green-600'
+                      }`}>
+                        {contract.budget.burnRate}%
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-3 text-center">
+                    <div className="flex items-center justify-center space-x-1">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-3 w-3" />
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  )
 
   const renderDashboardTab = () => (
     <div className="space-y-6">
@@ -461,81 +717,77 @@ export default function ContractAdminPage() {
         <Card className="card-premium p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Performance</h3>
           <div className="space-y-4">
-            {contracts.map((contract) => (
-              <div key={contract.id} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium text-gray-900">{contract.number}</h4>
-                    <p className="text-sm text-gray-600">{contract.title}</p>
-                  </div>
-                  <Badge variant={contract.status === 'active' ? 'default' : 'secondary'}>
-                    {contract.status.toUpperCase()}
-                  </Badge>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-gray-900">{currentContract.number}</h4>
+                  <p className="text-sm text-gray-600">{currentContract.title}</p>
                 </div>
+                <Badge variant={currentContract.status === 'active' ? 'default' : 'secondary'}>
+                  {currentContract.status.toUpperCase()}
+                </Badge>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{contract.performance.overall}%</div>
-                    <div className="text-sm text-gray-600">Overall Rating</div>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">{contract.budget.burnRate}%</div>
-                    <div className="text-sm text-gray-600">Budget Burn Rate</div>
-                  </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">{currentContract.performance.overall}%</div>
+                  <div className="text-sm text-gray-600">Overall Rating</div>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Quality</span>
-                    <span className="font-semibold">{contract.performance.quality}%</span>
-                  </div>
-                  <Progress value={contract.performance.quality} className="h-2" />
-                  
-                  <div className="flex justify-between text-sm">
-                    <span>Schedule</span>
-                    <span className="font-semibold">{contract.performance.schedule}%</span>
-                  </div>
-                  <Progress value={contract.performance.schedule} className="h-2" />
-                  
-                  <div className="flex justify-between text-sm">
-                    <span>Cost</span>
-                    <span className="font-semibold">{contract.performance.cost}%</span>
-                  </div>
-                  <Progress value={contract.performance.cost} className="h-2" />
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">{currentContract.budget.burnRate}%</div>
+                  <div className="text-sm text-gray-600">Budget Burn Rate</div>
                 </div>
               </div>
-            ))}
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Quality</span>
+                  <span className="font-semibold">{currentContract.performance.quality}%</span>
+                </div>
+                <Progress value={currentContract.performance.quality} className="h-2" />
+                
+                <div className="flex justify-between text-sm">
+                  <span>Schedule</span>
+                  <span className="font-semibold">{currentContract.performance.schedule}%</span>
+                </div>
+                <Progress value={currentContract.performance.schedule} className="h-2" />
+                
+                <div className="flex justify-between text-sm">
+                  <span>Cost</span>
+                  <span className="font-semibold">{currentContract.performance.cost}%</span>
+                </div>
+                <Progress value={currentContract.performance.cost} className="h-2" />
+              </div>
+            </div>
           </div>
         </Card>
 
         <Card className="card-premium p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Financial Health</h3>
           <div className="space-y-4">
-            {contracts.map((contract) => (
-              <div key={contract.id} className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-700">Total Budget</span>
-                  <span className="font-semibold">${(contract.budget.total / 1000000).toFixed(1)}M</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-700">Spent</span>
-                  <span className="font-semibold text-orange-600">${(contract.budget.spent / 1000000).toFixed(1)}M</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span className="text-gray-700">Remaining</span>
-                  <span className="font-semibold text-green-600">${(contract.budget.remaining / 1000000).toFixed(1)}M</span>
-                </div>
-                
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-                  <h5 className="font-medium text-blue-900 mb-1">Budget Status</h5>
-                  <p className="text-sm text-blue-800">
-                    {contract.budget.burnRate < 50 ? 'On track' : 'Monitor closely'} - {contract.budget.burnRate}% spent
-                  </p>
-                </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Total Budget</span>
+                <span className="font-semibold">${(currentContract.budget.total / 1000000).toFixed(1)}M</span>
               </div>
-            ))}
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Spent</span>
+                <span className="font-semibold text-orange-600">${(currentContract.budget.spent / 1000000).toFixed(1)}M</span>
+              </div>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-700">Remaining</span>
+                <span className="font-semibold text-green-600">${(currentContract.budget.remaining / 1000000).toFixed(1)}M</span>
+              </div>
+              
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                <h5 className="font-medium text-blue-900 mb-1">Budget Status</h5>
+                <p className="text-sm text-blue-800">
+                  {currentContract.budget.burnRate < 50 ? 'On track' : 'Monitor closely'} - {currentContract.budget.burnRate}% spent
+                </p>
+              </div>
+            </div>
           </div>
-        </Card>
+                </Card>
       </div>
 
       {/* Quick Actions */}
@@ -899,15 +1151,102 @@ export default function ContractAdminPage() {
           </div>
         </div>
 
+        {/* Contract Selection */}
+        <Card className="card-premium p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <div className="flex items-center space-x-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Select Contract</label>
+                <select 
+                  value={selectedContract}
+                  onChange={(e) => setSelectedContract(e.target.value)}
+                  className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {filteredContracts.map((contract) => (
+                    <option key={contract.id} value={contract.id}>
+                      {contract.number} - {contract.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Filter by Status</label>
+                <select 
+                  value={contractFilter}
+                  onChange={(e) => setContractFilter(e.target.value)}
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All</option>
+                  <option value="active">Active</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="terminated">Terminated</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Search contracts..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <Button variant="outline" className="btn-ghost-premium">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Contract
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Current Contract Info */}
+        <Card className="card-premium p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{currentContract.number}</h3>
+              <p className="text-gray-600">{currentContract.title}</p>
+              <p className="text-sm text-gray-500">{currentContract.agency}</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Contract Value</p>
+                <p className="text-lg font-semibold">${(currentContract.value / 1000000).toFixed(1)}M</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Status</p>
+                <Badge variant={
+                  currentContract.status === 'active' ? 'default' : 
+                  currentContract.status === 'completed' ? 'secondary' : 'outline'
+                }>
+                  {currentContract.status.toUpperCase()}
+                </Badge>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Performance</p>
+                <p className="text-lg font-semibold text-blue-600">{currentContract.performance.overall}%</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="modifications">Modifications</TabsTrigger>
             <TabsTrigger value="deliverables">Deliverables</TabsTrigger>
             <TabsTrigger value="subcontractors">Subcontractors</TabsTrigger>
             <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {renderOverviewTab()}
+          </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-6">
             {renderDashboardTab()}
