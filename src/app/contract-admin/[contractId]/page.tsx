@@ -728,16 +728,16 @@ export default function ContractWorkspacePage() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-10">
-            <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
-            <TabsTrigger value="modifications">✍️ Modifications</TabsTrigger>
-            <TabsTrigger value="deliverables">📆 Deliverables</TabsTrigger>
-            <TabsTrigger value="subcontractors">🤝 Subcontractors</TabsTrigger>
-            <TabsTrigger value="invoicing">📥 Invoicing</TabsTrigger>
-            <TabsTrigger value="gfp">📦 GFP Log</TabsTrigger>
-            <TabsTrigger value="closeout">📋 Closeout</TabsTrigger>
-            <TabsTrigger value="cpars">🧾 CPARS</TabsTrigger>
-            <TabsTrigger value="vault">🔐 Vault</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-9 bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger value="dashboard" className="text-xs">Dashboard</TabsTrigger>
+            <TabsTrigger value="modifications" className="text-xs">Modifications</TabsTrigger>
+            <TabsTrigger value="deliverables" className="text-xs">Deliverables</TabsTrigger>
+            <TabsTrigger value="subcontractors" className="text-xs">Subcontractors</TabsTrigger>
+            <TabsTrigger value="invoicing" className="text-xs">Invoicing</TabsTrigger>
+            <TabsTrigger value="gfp" className="text-xs">GFP Log</TabsTrigger>
+            <TabsTrigger value="closeout" className="text-xs">Closeout</TabsTrigger>
+            <TabsTrigger value="cpars" className="text-xs">CPARS</TabsTrigger>
+            <TabsTrigger value="vault" className="text-xs">Vault</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
