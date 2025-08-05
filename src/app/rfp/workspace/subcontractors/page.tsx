@@ -310,6 +310,54 @@ interface SpiritTeamAnalysis {
   }
 }
 
+// Team Assembly Specific Interfaces
+interface TeamAssemblySubcontractor {
+  id: string
+  name: string
+  type: string
+  specialties: string[]
+  pastPerformance: number
+  priceCompetitiveness: number
+  availability: 'high' | 'medium' | 'low'
+  certifications: string[]
+  location: string
+  contact: {
+    name: string
+    email: string
+    phone: string
+  }
+  matchScore: number
+  status: 'selected' | 'evaluating' | 'rejected' | 'approved' | 'contracted'
+  avatar: string
+  logo: string
+  bidStatus: 'submitted' | 'approved' | 'pending' | 'rejected'
+  assignedWork: {
+    scopeItems: string[]
+    estimatedValue: number
+    timeline: string
+    requirements: string[]
+  }
+  pricing: {
+    proposedAmount: number
+    laborRates: Record<string, number>
+    materials: number
+    overhead: number
+    profit: number
+  }
+  compliance: {
+    insurance: boolean
+    bonding: boolean
+    certifications: string[]
+    clearances: string[]
+  }
+  teamMembers: {
+    name: string
+    role: string
+    avatar: string
+    status: 'approved' | 'pending' | 'needs-review'
+  }[]
+}
+
 export default function SubcontractorManagementPage() {
   const [activeTab, setActiveTab] = useState('overview')
   const [selectedSubcontractor, setSelectedSubcontractor] = useState<string | null>(null)
@@ -986,6 +1034,266 @@ export default function SubcontractorManagementPage() {
     }
   ]
 
+  // Additional Team Assembly Functions from Original Page
+  const startTeamAnalysis = async () => {
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      isProcessing: true,
+      progress: 0,
+      currentPhase: 'Initializing team analysis...'
+    }))
+
+    const phases = [
+      'Analyzing team composition...',
+      'Evaluating subcontractor capabilities...',
+      'Identifying critical gaps...',
+      'Generating recommendations...',
+      'Finalizing analysis...'
+    ]
+
+    for (let i = 0; i < phases.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      setSpiritAnalysis(prev => ({
+        ...prev,
+        progress: ((i + 1) / phases.length) * 100,
+        currentPhase: phases[i]
+      }))
+    }
+
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      isProcessing: false,
+      teamReadiness: 82,
+      gaps: {
+        critical: ['Safety Officer certification expired', 'Construction Manager role unfilled'],
+        high: ['Backup personnel needed for critical roles'],
+        medium: ['Team workload distribution optimization']
+      },
+      recommendations: {
+        internal: ['Replace Thomas with qualified OSHA-certified personnel', 'Assign backup for Project Manager role'],
+        subcontractor: ['Hire construction manager through subcontractor', 'Request updated certifications'],
+        strategic: ['Optimize team composition for 89% readiness', 'Balance workload across team members']
+      },
+      automatedActions: {
+        completed: ['Team composition analysis', 'Gap identification'],
+        inProgress: ['Compliance verification'],
+        pending: ['Team optimization', 'Final approval']
+      }
+    }))
+  }
+
+  const askSpirit = async () => {
+    if (!userQuestion.trim()) return
+    
+    setIsAskingSpirit(true)
+    
+    // Simulate AI response
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    setIsAskingSpirit(false)
+    setUserQuestion('')
+  }
+
+  const runScenarioSimulation = async (scenarioKey: string) => {
+    setIsSimulating(true)
+    setCurrentScenario(scenarioKey)
+    
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    
+    const results = {
+      'conservative': {
+        winProbability: 65,
+        totalCost: 2850000,
+        timeline: '18 months',
+        risks: ['Budget overruns', 'Timeline delays'],
+        recommendations: ['Increase contingency budget', 'Add backup personnel']
+      },
+      'aggressive': {
+        winProbability: 85,
+        totalCost: 3200000,
+        timeline: '15 months',
+        risks: ['Resource constraints', 'Quality issues'],
+        recommendations: ['Optimize team composition', 'Enhance quality controls']
+      },
+      'premium': {
+        winProbability: 75,
+        totalCost: 3800000,
+        timeline: '20 months',
+        risks: ['Cost overruns', 'Scope creep'],
+        recommendations: ['Strict scope management', 'Enhanced monitoring']
+      }
+    }
+    
+    setScenarioResults(results[scenarioKey as keyof typeof results])
+    setIsSimulating(false)
+  }
+
+  const applyScenario = async () => {
+    if (!scenarioResults) return
+    
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      teamReadiness: prev.teamReadiness + 5,
+      automatedActions: {
+        ...prev.automatedActions,
+        completed: [...prev.automatedActions.completed, 'Scenario applied']
+      }
+    }))
+    
+    setShowScenarioSimulator(false)
+    setScenarioResults(null)
+  }
+
+  const sendScopeToSubcontractors = async () => {
+    setActionInProgress(true)
+    setSelectedAction('sending-scope')
+    
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      automatedActions: {
+        ...prev.automatedActions,
+        completed: [...prev.automatedActions.completed, 'Scope sent to subcontractors']
+      }
+    }))
+    
+    setActionInProgress(false)
+    setSelectedAction(null)
+    setShowScopeModal(false)
+  }
+
+  const handleFindCandidates = async (type: 'safety-officer' | 'construction-manager') => {
+    setCandidateType(type)
+    setShowCandidateModal(true)
+    
+    // Simulate finding candidates
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    const candidates = type === 'safety-officer' ? [
+      {
+        id: '1',
+        name: 'Sarah Mitchell',
+        title: 'Safety Officer',
+        experience: 8,
+        certifications: ['OSHA 30', 'First Aid', 'CPR'],
+        availability: 'Immediate',
+        rate: 95,
+        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '2',
+        name: 'David Thompson',
+        title: 'Safety Specialist',
+        experience: 12,
+        certifications: ['OSHA 30', 'Safety Management', 'Hazard Analysis'],
+        availability: '2 weeks',
+        rate: 110,
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face'
+      }
+    ] : [
+      {
+        id: '3',
+        name: 'Alex Rodriguez',
+        title: 'Construction Manager',
+        experience: 15,
+        certifications: ['PMP', 'OSHA 30', 'Construction Management'],
+        availability: 'Immediate',
+        rate: 115,
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
+      },
+      {
+        id: '4',
+        name: 'Maria Garcia',
+        title: 'Project Manager',
+        experience: 10,
+        certifications: ['PMP', 'Construction Safety', 'Quality Management'],
+        availability: '1 week',
+        rate: 105,
+        avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face'
+      }
+    ]
+    
+    setAvailableCandidates(candidates)
+  }
+
+  const handleSelectCandidate = async (candidate: any) => {
+    setSelectedCandidates(prev => ({
+      ...prev,
+      [candidateType!]: candidate
+    }))
+    
+    setSatisfactionStates(prev => ({
+      ...prev,
+      [candidateType!]: 'satisfied'
+    }))
+    
+    // Add candidate to team
+    if (candidateType === 'safety-officer') {
+      setTeamMembers(prev => prev.map(member => 
+        member.name === 'Thomas' 
+          ? { ...member, name: candidate.name, title: candidate.title, badges: [...member.badges, 'OSHA Certified'] }
+          : member
+      ))
+    } else if (candidateType === 'construction-manager') {
+      const newManager: TeamMember = {
+        id: '5',
+        name: candidate.name,
+        title: candidate.title,
+        email: `${candidate.name.toLowerCase().replace(' ', '.')}@company.com`,
+        phone: '(555) 567-8901',
+        location: 'Washington, DC',
+        skills: ['Construction Management', 'Federal Projects', 'Safety'],
+        experience: candidate.experience,
+        clearance: 'Secret',
+        availability: 'available',
+        rate: candidate.rate,
+        matchScore: 91,
+        status: 'assigned',
+        avatar: candidate.avatar,
+        badges: ['PMP', 'OSHA Certified']
+      }
+      setTeamMembers(prev => [...prev, newManager])
+    }
+    
+    setShowCandidateModal(false)
+    setCandidateType(null)
+  }
+
+  const handleConfirmSelections = async () => {
+    setSpiritAnalysis(prev => ({
+      ...prev,
+      teamReadiness: 89,
+      gaps: {
+        ...prev.gaps,
+        critical: []
+      }
+    }))
+    
+    completeStep(1)
+  }
+
+  const handleModifySelection = (type: 'safety-officer' | 'construction-manager') => {
+    setSatisfactionStates(prev => ({
+      ...prev,
+      [type]: 'modifying'
+    }))
+    
+    handleFindCandidates(type)
+  }
+
+  const handleRemoveSelection = (type: 'safety-officer' | 'construction-manager') => {
+    setSelectedCandidates(prev => ({
+      ...prev,
+      [type]: null
+    }))
+    
+    setSatisfactionStates(prev => ({
+      ...prev,
+      [type]: 'pending'
+    }))
+  }
+
   // Team Assembly State Variables
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
     {
@@ -1058,27 +1366,233 @@ export default function SubcontractorManagementPage() {
     }
   ])
 
+  const [teamAssemblySubcontractors, setTeamAssemblySubcontractors] = useState<TeamAssemblySubcontractor[]>([
+    {
+      id: 'sub1',
+      name: 'Gun HVAC',
+      type: 'HVAC Contractor',
+      specialties: ['HVAC Installation', 'System Maintenance', 'Controls'],
+      pastPerformance: 4.8,
+      priceCompetitiveness: 85,
+      availability: 'high',
+      certifications: ['NAICS 238220', 'Licensed HVAC'],
+      location: 'Reston, VA',
+      contact: {
+        name: 'Paul Johnson',
+        email: 'p.johnson@gunhvac.com',
+        phone: '(555) 456-7890'
+      },
+      matchScore: 87,
+      status: 'approved',
+      bidStatus: 'approved',
+      assignedWork: {
+        scopeItems: ['HVAC System Removal', 'New HVAC Installation', 'Controls Integration'],
+        estimatedValue: 450000,
+        timeline: '8 weeks',
+        requirements: ['OSHA 10 certification', 'HVAC license', 'EPA certification']
+      },
+      pricing: {
+        proposedAmount: 450000,
+        laborRates: { 'HVAC Technician': 85, 'Controls Specialist': 95, 'Helper': 45 },
+        materials: 280000,
+        overhead: 45000,
+        profit: 80000
+      },
+      compliance: {
+        insurance: true,
+        bonding: true,
+        certifications: ['OSHA 10', 'HVAC License', 'EPA 608'],
+        clearances: ['Public Trust']
+      },
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      logo: 'GUNN',
+      teamMembers: [
+        {
+          name: 'Paul',
+          role: 'HVAC Technician',
+          avatar: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=150&h=150&fit=crop&crop=face',
+          status: 'approved'
+        },
+        {
+          name: 'Thomas',
+          role: 'Safety Officer',
+          avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+          status: 'needs-review'
+        }
+      ]
+    },
+    {
+      id: 'sub2',
+      name: 'Bregman Electric',
+      type: 'Electrical Contractor',
+      specialties: ['Electrical Installation', 'Wiring', 'Controls'],
+      pastPerformance: 4.6,
+      priceCompetitiveness: 78,
+      availability: 'medium',
+      certifications: ['NAICS 238210', 'Licensed Electrician'],
+      location: 'Bethesda, MD',
+      contact: {
+        name: 'Lisa Rodriguez',
+        email: 'l.rodriguez@bregmanelectric.com',
+        phone: '(555) 567-8901'
+      },
+      matchScore: 82,
+      status: 'selected',
+      bidStatus: 'submitted',
+      assignedWork: {
+        scopeItems: ['Electrical Integration', 'Panel Upgrades', 'Wiring Installation'],
+        estimatedValue: 280000,
+        timeline: '6 weeks',
+        requirements: ['Electrical license', 'NEC knowledge', 'Safety training']
+      },
+      pricing: {
+        proposedAmount: 280000,
+        laborRates: { 'Electrician': 75, 'Journeyman': 65, 'Helper': 40 },
+        materials: 180000,
+        overhead: 28000,
+        profit: 52000
+      },
+      compliance: {
+        insurance: true,
+        bonding: true,
+        certifications: ['Electrical License', 'NEC Training'],
+        clearances: ['Public Trust']
+      },
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+      logo: '⚡',
+      teamMembers: [
+        {
+          name: 'Natalie',
+          role: 'Electrician',
+          avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&h=150&fit=crop&crop=face',
+          status: 'pending'
+        },
+        {
+          name: 'Jacob',
+          role: 'Journeyman',
+          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+          status: 'approved'
+        }
+      ]
+    },
+    {
+      id: 'sub3',
+      name: 'Carroll Plumbing',
+      type: 'Plumbing Contractor',
+      specialties: ['Plumbing Installation', 'Pipe Systems', 'Fixtures'],
+      pastPerformance: 4.7,
+      priceCompetitiveness: 82,
+      availability: 'high',
+      certifications: ['NAICS 238220', 'Licensed Plumber'],
+      location: 'Arlington, VA',
+      contact: {
+        name: 'David Chen',
+        email: 'd.chen@carrollplumbing.com',
+        phone: '(555) 678-9012'
+      },
+      matchScore: 85,
+      status: 'contracted',
+      bidStatus: 'approved',
+      assignedWork: {
+        scopeItems: ['Plumbing Integration', 'Condensate Lines', 'Water Connections'],
+        estimatedValue: 180000,
+        timeline: '4 weeks',
+        requirements: ['Plumbing license', 'Local code knowledge', 'Safety training']
+      },
+      pricing: {
+        proposedAmount: 180000,
+        laborRates: { 'Plumber': 70, 'Helper': 35 },
+        materials: 120000,
+        overhead: 18000,
+        profit: 32000
+      },
+      compliance: {
+        insurance: true,
+        bonding: true,
+        certifications: ['Plumbing License', 'Local Code Training'],
+        clearances: ['Public Trust']
+      },
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+      logo: 'C',
+      teamMembers: [
+        {
+          name: 'Matthew',
+          role: 'Plumber',
+          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+          status: 'approved'
+        },
+        {
+          name: 'Olivia',
+          role: 'Plumbing Helper',
+          avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+          status: 'approved'
+        }
+      ]
+    }
+  ])
+
+  const [roleRequirements, setRoleRequirements] = useState<RoleRequirement[]>([
+    {
+      id: 'role1',
+      title: 'Cloud Migration Lead',
+      description: 'Lead the migration of legacy systems to cloud infrastructure',
+      requiredSkills: ['AWS/Azure', 'Cloud Migration', 'DevOps'],
+      experience: 7,
+      clearance: 'Secret',
+      hours: 1920,
+      priority: 'critical',
+      status: 'filled',
+      assignedTo: '1'
+    },
+    {
+      id: 'role2',
+      title: 'Security Compliance Specialist',
+      description: 'Ensure FedRAMP and FISMA compliance throughout the project',
+      requiredSkills: ['FedRAMP', 'FISMA', 'Security Controls'],
+      experience: 5,
+      clearance: 'Top Secret',
+      hours: 1440,
+      priority: 'critical',
+      status: 'filled',
+      assignedTo: '2'
+    },
+    {
+      id: 'role3',
+      title: 'Project Manager',
+      description: 'Manage project timeline, budget, and stakeholder communications',
+      requiredSkills: ['PMP', 'Federal Contracts', 'Risk Management'],
+      experience: 8,
+      clearance: 'Secret',
+      hours: 1920,
+      priority: 'high',
+      status: 'filled',
+      assignedTo: '3'
+    },
+    {
+      id: 'role4',
+      title: 'Training Coordinator',
+      description: 'Develop and deliver training materials for end users',
+      requiredSkills: ['Training Development', 'Change Management', 'VA Systems'],
+      experience: 4,
+      clearance: 'Public Trust',
+      hours: 960,
+      priority: 'medium',
+      status: 'gap'
+    }
+  ])
+
   const [spiritAnalysis, setSpiritAnalysis] = useState<SpiritTeamAnalysis>({
     isProcessing: false,
     progress: 0,
-    currentPhase: 'Initializing',
-    teamReadiness: 82,
-    gaps: {
-      critical: ['Safety Officer certification expired', 'Construction Manager role unfilled'],
-      high: ['Backup personnel needed for critical roles'],
-      medium: ['Team workload distribution optimization']
-    },
-    recommendations: {
-      internal: ['Replace Thomas with qualified OSHA-certified personnel', 'Assign backup for Project Manager role'],
-      subcontractor: ['Hire construction manager through subcontractor', 'Request updated certifications'],
-      strategic: ['Optimize team composition for 89% readiness', 'Balance workload across team members']
-    },
-    automatedActions: {
-      completed: ['Team composition analysis', 'Gap identification'],
-      inProgress: ['Compliance verification'],
-      pending: ['Team optimization', 'Final approval']
-    }
+    currentPhase: '',
+    teamReadiness: 0,
+    gaps: { critical: [], high: [], medium: [] },
+    recommendations: { internal: [], subcontractor: [], strategic: [] },
+    automatedActions: { completed: [], inProgress: [], pending: [] }
   })
+
+  const [userQuestion, setUserQuestion] = useState('')
+  const [isAskingSpirit, setIsAskingSpirit] = useState(false)
 
   // Team Assembly Workflow State
   const [currentStep, setCurrentStep] = useState(1)
@@ -1355,235 +1869,420 @@ export default function SubcontractorManagementPage() {
 
   const renderTeamAssemblyTab = () => (
     <div className="space-y-6">
-      {/* Team Assembly Workflow */}
-      <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0">
-        <div className="flex items-center justify-between mb-6">
+      {/* Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Team Assembly Workflow</h3>
-            <p className="text-gray-600">Guided process to assemble and optimize your project team</p>
+            <h1 className="text-3xl font-bold text-gray-900">Contractor Team Assembly</h1>
+            <p className="text-gray-600">AI-Powered Team Building & Subcontractor Selection</p>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-blue-600">{spiritAnalysis.teamReadiness}%</div>
-            <div className="text-sm text-gray-600">Team Readiness</div>
+          <div className="flex items-center space-x-3">
+            <Button 
+              variant="outline"
+              onClick={() => setShowScenarioSimulator(true)}
+              className="border-blue-200 text-blue-700 hover:bg-blue-50"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Scenario Simulator
+            </Button>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Overall Readiness
+            </Button>
+            <Button 
+              onClick={startTeamAnalysis}
+              disabled={spiritAnalysis.isProcessing}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+            >
+              {spiritAnalysis.isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                <>
+                  <Bot className="h-4 w-4 mr-2" />
+                  Start Team Analysis
+                </>
+              )}
+            </Button>
           </div>
         </div>
         
-        {/* Progress Bar */}
-        <div className="mb-6">
-          <div className="flex justify-between text-sm text-gray-600 mb-2">
-            <span>Progress</span>
-            <span>{workflowProgress}%</span>
-          </div>
-          <Progress value={workflowProgress} className="h-3" />
-        </div>
-
-        {/* Workflow Steps */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {workflowSteps.map((step, index) => {
-            const status = getStepStatus(step.id)
-            return (
-              <motion.div
-                key={step.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={`p-4 rounded-xl border-2 transition-all duration-300 ${
-                  status === 'completed' 
-                    ? 'bg-green-50 border-green-200' 
-                    : status === 'active'
-                    ? 'bg-blue-50 border-blue-200 shadow-lg'
-                    : 'bg-gray-50 border-gray-200'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    status === 'completed' 
-                      ? 'bg-green-500 text-white' 
-                      : status === 'active'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-300 text-gray-600'
-                  }`}>
-                    {status === 'completed' ? (
-                      <CheckCircle className="h-4 w-4" />
-                    ) : (
-                      step.id
-                    )}
-                  </div>
-                  <Badge className={
-                    status === 'completed' ? 'bg-green-100 text-green-800' :
-                    status === 'active' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-600'
-                  }>
-                    {status === 'completed' ? 'Completed' : status === 'active' ? 'Active' : 'Pending'}
-                  </Badge>
-                </div>
-                
-                <h4 className={`font-semibold mb-2 ${
-                  status === 'completed' ? 'text-green-900' :
-                  status === 'active' ? 'text-blue-900' :
-                  'text-gray-700'
-                }`}>
-                  {step.title}
-                </h4>
-                
-                <p className={`text-sm mb-4 ${
-                  status === 'completed' ? 'text-green-700' :
-                  status === 'active' ? 'text-blue-700' :
-                  'text-gray-600'
-                }`}>
-                  {step.description}
-                </p>
-
-                {status === 'active' && (
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="relative overflow-hidden"
-                  >
-                    <Button 
-                      size="sm"
-                      className="w-full bg-gradient-to-r from-purple-600 via-blue-600 to-purple-700 hover:from-purple-700 hover:via-blue-700 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300 border-0 text-white font-semibold py-3 px-4 relative overflow-hidden group"
-                      onClick={() => openStepModal(step)}
-                      disabled={actionInProgress}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-                      
-                      <div className="relative flex items-center justify-center">
-                        <div className="mr-2 p-1 rounded-full bg-white/20 backdrop-blur-sm">
-                          <Brain className="h-4 w-4 text-white drop-shadow-sm" />
-                        </div>
-                        <span className="text-sm font-medium tracking-wide">
-                          Begin Analysis
-                        </span>
-                        <ChevronRight className="h-4 w-4 ml-2 text-white/80 group-hover:translate-x-1 transition-transform duration-200" />
-                      </div>
-                    </Button>
-                    
-                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-400/20 to-blue-400/20 animate-pulse pointer-events-none"></div>
-                  </motion.div>
-                )}
-                
-                {status === 'completed' && (
-                  <div className="flex items-center text-green-700">
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    <span className="text-sm font-medium">Step Complete</span>
-                  </div>
-                )}
-              </motion.div>
-            )
-          })}
-        </div>
-      </Card>
-
-      {/* Prime Contractor Team */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Prime Contractor Team</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {teamMembers.map((member, index) => (
-            <motion.div
-              key={member.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-200 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="flex items-center mb-3">
-                <img 
-                  src={member.avatar} 
-                  alt={member.name}
-                  className="w-12 h-12 rounded-full border-2 border-blue-200 shadow-sm"
-                />
-                <div className="ml-3">
-                  <h4 className="font-semibold text-gray-900">{member.name}</h4>
-                  <p className="text-sm text-gray-600">{member.title}</p>
-                </div>
+        {/* Project Card */}
+        <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center mr-4">
+                <span className="text-white font-bold text-xl">A</span>
               </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Match Score</span>
-                  <span className="text-sm font-semibold text-green-600">{member.matchScore}%</span>
-                </div>
-                <Progress value={member.matchScore} className="h-2" />
-                
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {member.badges.map((badge, badgeIndex) => (
-                    <Badge key={badgeIndex} className="text-xs bg-blue-100 text-blue-800">
-                      {badge}
-                    </Badge>
-                  ))}
-                </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">HVAC Replacement at MVA Westminster Branch</h2>
+                <p className="text-gray-600">Federal project with multiple subcontractor requirements</p>
               </div>
-            </motion.div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Subcontractor Partners */}
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Subcontractor Partners</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {subcontractors.filter(sub => sub.status === 'approved' || sub.status === 'evaluating').map((sub, index) => (
-            <motion.div
-              key={sub.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="p-4 bg-gradient-to-br from-green-50 to-white rounded-xl border border-green-200 hover:shadow-lg transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                    {sub.name.charAt(0)}
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="font-semibold text-gray-900">{sub.name}</h4>
-                    <p className="text-sm text-gray-600">{sub.type}</p>
-                  </div>
-                </div>
-                <Badge className={
-                  sub.status === 'approved' ? 'bg-green-100 text-green-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }>
-                  {sub.status}
-                </Badge>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Match Score</span>
-                  <span className="text-sm font-semibold text-green-600">{sub.matchScore}%</span>
-                </div>
-                <Progress value={sub.matchScore} className="h-2" />
-                
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {sub.specialties.slice(0, 2).map((specialty, specialtyIndex) => (
-                    <Badge key={specialtyIndex} className="text-xs bg-green-100 text-green-800">
-                      {specialty}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Critical Gaps */}
-      <Card className="p-6 bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
-        <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
-          <AlertTriangle className="h-5 w-5 mr-2" />
-          Critical Gaps
-        </h3>
-        <div className="space-y-3">
-          {spiritAnalysis.gaps.critical.map((gap, index) => (
-            <div key={index} className="flex items-center p-3 bg-white rounded-lg border border-red-200">
-              <AlertTriangle className="h-5 w-5 text-red-600 mr-3 flex-shrink-0" />
-              <span className="text-red-800">{gap}</span>
             </div>
-          ))}
+            <div className="text-right">
+              <div className="text-3xl font-bold text-blue-600">{spiritAnalysis.teamReadiness}%</div>
+              <div className="text-sm text-gray-600">Team Readiness</div>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Processing Status */}
+          {spiritAnalysis.isProcessing && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0">
+                <div className="flex items-center mb-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                  <h3 className="font-semibold text-blue-900">Spirit AI is Analyzing Your Team</h3>
+                </div>
+                <p className="text-blue-800 mb-3">{spiritAnalysis.currentPhase}</p>
+                <Progress value={spiritAnalysis.progress} className="h-2" />
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Team Analysis Results */}
+          {!spiritAnalysis.isProcessing && spiritAnalysis.progress > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              {/* Prime Contractor Section */}
+              <Card className="p-8 bg-gradient-to-br from-white to-gray-50/30 border-0 shadow-lg">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                  <Users className="h-5 w-5 mr-2 text-blue-600" />
+                  Prime Contractor Team
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {teamMembers.map((member) => (
+                    <motion.div 
+                      key={member.id} 
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      whileHover={{ y: -4, scale: 1.02 }}
+                      transition={{ duration: 0.3 }}
+                      className="group relative p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div className="relative mb-4">
+                          <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-white shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                            <img 
+                              src={member.avatar} 
+                              alt={member.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                          {member.name === 'Jennifer Davis' && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-orange-500 rounded-full border-3 border-white shadow-sm flex items-center justify-center">
+                              <AlertTriangle className="h-2.5 w-2.5 text-white" />
+                            </div>
+                          )}
+                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white shadow-sm flex items-center justify-center">
+                            <CheckCircle className="h-3 w-3 text-white" />
+                          </div>
+                        </div>
+                        
+                        <div className="mb-3">
+                          <h4 className="text-lg font-bold text-gray-900 mb-1">{member.name}</h4>
+                          <p className="text-sm text-gray-600 font-medium">{member.title}</p>
+                        </div>
+                        
+                        <div className="flex flex-wrap justify-center gap-1.5 mb-4">
+                          {member.badges.map((badge, badgeIndex) => (
+                            <Badge 
+                              key={badgeIndex} 
+                              className="bg-gradient-to-r from-blue-50 to-blue-100 text-blue-800 border border-blue-200 text-xs font-medium px-2 py-1"
+                            >
+                              {badge}
+                            </Badge>
+                          ))}
+                        </div>
+                        
+                        <div className="w-full space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500">Match Score</span>
+                            <span className="font-semibold text-green-600">{member.matchScore}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div 
+                              className="bg-gradient-to-r from-green-400 to-green-600 h-1.5 rounded-full transition-all duration-300"
+                              style={{ width: `${member.matchScore}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Subcontractors Section */}
+              <Card className="p-8 bg-gradient-to-br from-white to-blue-50/30 border-0 shadow-lg">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                  <Building2 className="h-5 w-5 mr-2 text-blue-600" />
+                  Subcontractor Partners
+                </h3>
+                <div className="space-y-6">
+                  {teamAssemblySubcontractors.map((sub) => (
+                    <motion.div 
+                      key={sub.id} 
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      whileHover={{ x: 4 }}
+                      transition={{ duration: 0.3 }}
+                      className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center">
+                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center mr-4 border-4 border-white shadow-lg">
+                            <span className="text-blue-700 font-bold text-xl">{sub.logo}</span>
+                          </div>
+                          <div>
+                            <h4 className="text-xl font-bold text-gray-900 mb-1">{sub.name}</h4>
+                            <p className="text-sm text-gray-600 font-medium">{sub.type}</p>
+                            <div className="flex items-center mt-2 space-x-4 text-sm">
+                              <span className="text-gray-500">Match: <span className="font-semibold text-blue-600">{sub.matchScore}%</span></span>
+                              <span className="text-gray-500">Performance: <span className="font-semibold text-green-600">{sub.pastPerformance}/5.0</span></span>
+                              <span className="text-gray-500">Bid: <span className="font-semibold text-purple-600">${(sub.pricing.proposedAmount / 1000).toFixed(0)}K</span></span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <Badge className={
+                            sub.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            sub.status === 'selected' ? 'bg-blue-100 text-blue-800' :
+                            sub.status === 'contracted' ? 'bg-purple-100 text-purple-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }>
+                            {sub.status}
+                          </Badge>
+                          <Button size="sm" variant="outline" className="border-blue-200 text-blue-700 hover:bg-blue-50">
+                            <Eye className="h-3 w-3 mr-1" />
+                            View Details
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                          <h5 className="font-semibold text-gray-900 mb-2">Assigned Work</h5>
+                          <div className="space-y-2">
+                            {sub.assignedWork.scopeItems.map((item, index) => (
+                              <div key={index} className="flex items-center text-sm">
+                                <CheckCircle className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
+                                <span className="text-gray-700">{item}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h5 className="font-semibold text-gray-900 mb-2">Team Members</h5>
+                          <div className="space-y-2">
+                            {sub.teamMembers.map((member, index) => (
+                              <div key={index} className="flex items-center text-sm">
+                                <img 
+                                  src={member.avatar} 
+                                  alt={member.name}
+                                  className="h-6 w-6 rounded-full mr-2"
+                                />
+                                <span className="text-gray-700">{member.name}</span>
+                                <Badge className={`ml-auto text-xs ${
+                                  member.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                  member.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {member.status}
+                                </Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <h5 className="font-semibold text-gray-900 mb-2">Compliance</h5>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">Insurance</span>
+                              <Badge className={sub.compliance.insurance ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                {sub.compliance.insurance ? 'Active' : 'Missing'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">Bonding</span>
+                              <Badge className={sub.compliance.bonding ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                {sub.compliance.bonding ? 'Active' : 'Missing'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-gray-600">Certifications</span>
+                              <Badge className="bg-blue-100 text-blue-800">
+                                {sub.compliance.certifications.length}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </Card>
+            </motion.div>
+          )}
         </div>
-      </Card>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Team Assembly Workflow */}
+          <Card className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-0">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Team Assembly Workflow</h3>
+                <p className="text-gray-600">Guided process to assemble and optimize your project team</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-blue-600">{spiritAnalysis.teamReadiness}%</div>
+                <div className="text-sm text-gray-600">Team Readiness</div>
+              </div>
+            </div>
+            
+            {/* Progress Bar */}
+            <div className="mb-6">
+              <div className="flex justify-between text-sm text-gray-600 mb-2">
+                <span>Progress</span>
+                <span>{workflowProgress}%</span>
+              </div>
+              <Progress value={workflowProgress} className="h-3" />
+            </div>
+
+            {/* Workflow Steps */}
+            <div className="grid grid-cols-1 gap-4">
+              {workflowSteps.map((step, index) => {
+                const status = getStepStatus(step.id)
+                return (
+                  <motion.div
+                    key={step.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                      status === 'completed' 
+                        ? 'bg-green-50 border-green-200' 
+                        : status === 'active'
+                        ? 'bg-blue-50 border-blue-200 shadow-lg'
+                        : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        status === 'completed' 
+                          ? 'bg-green-500 text-white' 
+                          : status === 'active'
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-300 text-gray-600'
+                      }`}>
+                        {status === 'completed' ? (
+                          <CheckCircle className="h-4 w-4" />
+                        ) : (
+                          step.id
+                        )}
+                      </div>
+                      <Badge className={
+                        status === 'completed' ? 'bg-green-100 text-green-800' :
+                        status === 'active' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-600'
+                      }>
+                        {status === 'completed' ? 'Completed' : status === 'active' ? 'Active' : 'Pending'}
+                      </Badge>
+                    </div>
+                    
+                    <h4 className={`font-semibold mb-2 ${
+                      status === 'completed' ? 'text-green-900' :
+                      status === 'active' ? 'text-blue-900' :
+                      'text-gray-700'
+                    }`}>
+                      {step.title}
+                    </h4>
+                    
+                    <p className={`text-sm mb-4 ${
+                      status === 'completed' ? 'text-green-700' :
+                      status === 'active' ? 'text-blue-700' :
+                      'text-gray-600'
+                    }`}>
+                      {step.description}
+                    </p>
+
+                    {status === 'active' && (
+                      <motion.div
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="relative overflow-hidden"
+                      >
+                        <Button 
+                          size="sm"
+                          className="w-full bg-gradient-to-r from-purple-600 via-blue-600 to-purple-700 hover:from-purple-700 hover:via-blue-700 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300 border-0 text-white font-semibold py-3 px-4 relative overflow-hidden group"
+                          onClick={() => openStepModal(step)}
+                          disabled={actionInProgress}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                          
+                          <div className="relative flex items-center justify-center">
+                            <div className="mr-2 p-1 rounded-full bg-white/20 backdrop-blur-sm">
+                              <Brain className="h-4 w-4 text-white drop-shadow-sm" />
+                            </div>
+                            <span className="text-sm font-medium tracking-wide">
+                              Begin Analysis
+                            </span>
+                            <ChevronRight className="h-4 w-4 ml-2 text-white/80 group-hover:translate-x-1 transition-transform duration-200" />
+                          </div>
+                        </Button>
+                        
+                        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-purple-400/20 to-blue-400/20 animate-pulse pointer-events-none"></div>
+                      </motion.div>
+                    )}
+                    
+                    {status === 'completed' && (
+                      <div className="flex items-center text-green-700">
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        <span className="text-sm font-medium">Step Complete</span>
+                      </div>
+                    )}
+                  </motion.div>
+                )
+              })}
+            </div>
+          </Card>
+
+          {/* Critical Gaps */}
+          <Card className="p-6 bg-gradient-to-r from-red-50 to-orange-50 border-red-200">
+            <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              Critical Gaps
+            </h3>
+            <div className="space-y-3">
+              {spiritAnalysis.gaps.critical.map((gap, index) => (
+                <div key={index} className="flex items-center p-3 bg-white rounded-lg border border-red-200">
+                  <AlertTriangle className="h-5 w-5 text-red-600 mr-3 flex-shrink-0" />
+                  <span className="text-red-800">{gap}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 
