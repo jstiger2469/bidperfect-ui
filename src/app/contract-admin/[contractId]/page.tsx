@@ -105,7 +105,9 @@ import {
   ChevronLeft,
   Hash as HashIcon8,
   Hash as HashIcon9,
-  Hash as HashIcon10
+  Hash as HashIcon10,
+  Trash2,
+  Send
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -3215,6 +3217,22 @@ export default function ContractWorkspacePage() {
   const renderInvoiceBuilderModal = () => {
     if (!selectedCLIN) return null
 
+    const [invoiceData, setInvoiceData] = useState({
+      invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+      description: '',
+      quantity: 1,
+      unitPrice: selectedCLIN.unitPrice,
+      lineItems: [] as any[],
+      periodOfPerformance: '',
+      certifications: [] as string[],
+      attachments: [] as string[],
+      notes: '',
+      customFields: {} as Record<string, any>
+    })
+
+    const [currentStep, setCurrentStep] = useState<'recipient' | 'template' | 'details' | 'review' | 'build'>('recipient')
+    const [showTemplatePreview, setShowTemplatePreview] = useState(false)
+
     const handleRecipientChange = (recipient: PaymentRecipient) => {
       setSelectedRecipient(recipient)
       const withholding = calculateTaxWithholding(recipient, invoiceAmount)
@@ -3236,42 +3254,739 @@ export default function ContractWorkspacePage() {
       }
     }
 
-    return (
-      <Dialog open={showInvoiceBuilder} onOpenChange={setShowInvoiceBuilder}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <FileText className="h-5 w-5" />
-              <span>Invoice Builder - CLIN {selectedCLIN.number}</span>
-            </DialogTitle>
-            <DialogDescription>
-              Build and submit invoices for {selectedCLIN.title}
-            </DialogDescription>
-          </DialogHeader>
+    const addLineItem = () => {
+      setInvoiceData(prev => ({
+        ...prev,
+        lineItems: [...prev.lineItems, {
+          id: `line-${Date.now()}`,
+          description: '',
+          quantity: 1,
+          unitPrice: 0,
+          total: 0
+        }]
+      }))
+    }
 
-          <div className="space-y-6">
-            {/* Contract Information */}
-            <Card className="p-4">
-              <h4 className="font-semibold mb-3">Contract Information</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">State:</span>
-                  <p className="font-medium">LA</p>
+    const updateLineItem = (index: number, field: string, value: any) => {
+      setInvoiceData(prev => {
+        const newLineItems = [...prev.lineItems]
+        newLineItems[index] = { ...newLineItems[index], [field]: value }
+        
+        // Calculate total for line item
+        if (field === 'quantity' || field === 'unitPrice') {
+          newLineItems[index].total = newLineItems[index].quantity * newLineItems[index].unitPrice
+        }
+        
+        return { ...prev, lineItems: newLineItems }
+      })
+    }
+
+    const removeLineItem = (index: number) => {
+      setInvoiceData(prev => ({
+        ...prev,
+        lineItems: prev.lineItems.filter((_, i) => i !== index)
+      }))
+    }
+
+    const calculateInvoiceTotal = () => {
+      const lineItemsTotal = invoiceData.lineItems.reduce((sum, item) => sum + item.total, 0)
+      return lineItemsTotal + invoiceData.unitPrice * invoiceData.quantity
+    }
+
+    const validateInvoice = () => {
+      const template = selectedTemplate
+      if (!template) return { valid: false, issues: ['No template selected'] }
+
+      const issues: string[] = []
+      
+      // Check required fields
+      template.requirements.requiredFields.forEach(field => {
+        if (!invoiceData.customFields[field] && !invoiceData[field as keyof typeof invoiceData]) {
+          issues.push(`Missing required field: ${field}`)
+        }
+      })
+
+      // Check line items
+      if (invoiceData.lineItems.length === 0) {
+        issues.push('At least one line item is required')
+      }
+
+      // Check description
+      if (!invoiceData.description.trim()) {
+        issues.push('Invoice description is required')
+      }
+
+      return { valid: issues.length === 0, issues }
+    }
+
+          return (
+        <Dialog open={showInvoiceBuilder} onOpenChange={setShowInvoiceBuilder}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>Enterprise Invoice Builder - CLIN {selectedCLIN.number}</span>
+              </DialogTitle>
+              <DialogDescription>
+                Build and submit enterprise-grade invoices for {selectedCLIN.title}
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Step Navigation */}
+            <div className="flex items-center space-x-4 mb-6">
+              {['recipient', 'template', 'details', 'review', 'build'].map((step, index) => (
+                <div key={step} className="flex items-center">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    currentStep === step 
+                      ? 'bg-blue-600 text-white' 
+                      : index < ['recipient', 'template', 'details', 'review', 'build'].indexOf(currentStep)
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <span className={`ml-2 text-sm font-medium ${
+                    currentStep === step ? 'text-blue-600' : 'text-gray-600'
+                  }`}>
+                    {step.charAt(0).toUpperCase() + step.slice(1)}
+                  </span>
+                  {index < 4 && <ChevronRight className="h-4 w-4 text-gray-400 ml-2" />}
                 </div>
-                <div>
-                  <span className="text-gray-600">Agency:</span>
-                  <p className="font-medium">DoTS</p>
+              ))}
+            </div>
+
+                        <div className="space-y-6">
+              {/* Step 1: Recipient Selection */}
+              {currentStep === 'recipient' && (
+                <>
+                  <Card className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <UserCheck className="h-5 w-5 text-blue-600" />
+                      <h4 className="font-semibold">Step 1: Select Payment Recipient</h4>
+                    </div>
+                    <p className="text-gray-600 mb-4">Choose the recipient for this invoice. The selection will determine the appropriate invoice template and tax requirements.</p>
+                    
+                    <div className="space-y-3">
+                      {paymentRecipients.map(recipient => (
+                        <div
+                          key={recipient.id}
+                          className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                            selectedRecipient?.id === recipient.id 
+                              ? 'border-blue-500 bg-blue-50 shadow-md' 
+                              : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                          }`}
+                          onClick={() => handleRecipientChange(recipient)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <h5 className="font-medium">{recipient.name}</h5>
+                                <Badge variant="outline" className="text-xs">
+                                  {recipient.type}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  {recipient.taxClassification}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-600 mb-2">
+                                {recipient.address.street}, {recipient.address.city}, {recipient.address.state} {recipient.address.zip}
+                              </p>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-500">
+                                <div>
+                                  <span className="font-medium">Tax ID:</span> {recipient.taxId}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Payment:</span> {recipient.paymentInfo.method}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Contact:</span> {recipient.contact.name}
+                                </div>
+                                <div>
+                                  <span className="font-medium">Status:</span> {recipient.status}
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2 mt-2">
+                                {recipient.certifications.sam && <Badge variant="secondary" className="text-xs">SAM</Badge>}
+                                {recipient.certifications.cage && <Badge variant="secondary" className="text-xs">CAGE</Badge>}
+                                {recipient.certifications.duns && <Badge variant="secondary" className="text-xs">DUNS</Badge>}
+                                {recipient.certifications.taxClearance && <Badge variant="secondary" className="text-xs">Tax Clear</Badge>}
+                              </div>
+                            </div>
+                            {selectedRecipient?.id === recipient.id && (
+                              <CheckCircle className="h-6 w-6 text-blue-600" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  <div className="flex justify-end space-x-3">
+                    <Button variant="outline" onClick={() => setShowInvoiceBuilder(false)}>
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={() => setCurrentStep('template')}
+                      disabled={!selectedRecipient}
+                      className="btn-premium"
+                    >
+                      Next: Select Template
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 2: Template Selection */}
+              {currentStep === 'template' && (
+                <>
+                  <Card className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <h4 className="font-semibold">Step 2: Select Invoice Template</h4>
+                    </div>
+                    <p className="text-gray-600 mb-4">Choose the appropriate invoice template based on the recipient type and agency requirements.</p>
+                    
+                    <div className="space-y-4">
+                      {invoiceTemplates
+                        .filter(template => 
+                          selectedRecipient?.type === 'individual' 
+                            ? template.id === 'template-individual'
+                            : template.agency === 'DoTS' || template.agency === 'US Army Corps of Engineers'
+                        )
+                        .map(template => (
+                          <div
+                            key={template.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                              selectedTemplate?.id === template.id 
+                                ? 'border-purple-500 bg-purple-50 shadow-md' 
+                                : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                            }`}
+                            onClick={() => setSelectedTemplate(template)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <h5 className="font-medium">{template.name}</h5>
+                                  <Badge variant="outline" className="text-xs">
+                                    {template.agency}
+                                  </Badge>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {template.solicitationType}
+                                  </Badge>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                  <div>
+                                    <h6 className="font-medium text-gray-700 mb-1">Required Fields:</h6>
+                                    <div className="flex flex-wrap gap-1">
+                                      {template.requirements.requiredFields.slice(0, 3).map(field => (
+                                        <Badge key={field} variant="outline" className="text-xs">
+                                          {field}
+                                        </Badge>
+                                      ))}
+                                      {template.requirements.requiredFields.length > 3 && (
+                                        <Badge variant="outline" className="text-xs">
+                                          +{template.requirements.requiredFields.length - 3} more
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h6 className="font-medium text-gray-700 mb-1">Validations:</h6>
+                                    <div className="flex flex-wrap gap-1">
+                                      {template.spiritValidation.checks.slice(0, 2).map(check => (
+                                        <Badge key={check} variant="outline" className="text-xs">
+                                          {check}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <Badge variant={template.spiritValidation.autoValidation ? 'default' : 'secondary'} className="text-xs">
+                                  {template.spiritValidation.autoValidation ? 'Auto-Validate' : 'Manual'}
+                                </Badge>
+                                {selectedTemplate?.id === template.id && (
+                                  <CheckCircle className="h-6 w-6 text-purple-600 mt-2" />
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+
+                    {selectedTemplate && (
+                      <Card className="p-4 mt-4 bg-blue-50">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <Brain className="h-4 w-4 text-blue-600" />
+                          <h6 className="font-medium text-blue-900">Template Requirements</h6>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm text-blue-800">
+                          <div>
+                            <h7 className="font-medium">Required Fields:</h7>
+                            <ul className="mt-1 space-y-1">
+                              {selectedTemplate.requirements.requiredFields.map(field => (
+                                <li key={field} className="flex items-center space-x-1">
+                                  <CheckCircle className="h-3 w-3" />
+                                  <span>{field}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div>
+                            <h7 className="font-medium">Required Attachments:</h7>
+                            <ul className="mt-1 space-y-1">
+                              {selectedTemplate.requirements.attachments.map(attachment => (
+                                <li key={attachment} className="flex items-center space-x-1">
+                                  <CheckCircle className="h-3 w-3" />
+                                  <span>{attachment}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      </Card>
+                    )}
+                  </Card>
+
+                  <div className="flex justify-between space-x-3">
+                    <Button variant="outline" onClick={() => setCurrentStep('recipient')}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back: Recipient
+                    </Button>
+                    <Button 
+                      onClick={() => setCurrentStep('details')}
+                      disabled={!selectedTemplate}
+                      className="btn-premium"
+                    >
+                      Next: Invoice Details
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 3: Invoice Details */}
+              {currentStep === 'details' && (
+                <>
+                  <Card className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <Edit className="h-5 w-5 text-blue-600" />
+                      <h4 className="font-semibold">Step 3: Invoice Details</h4>
+                    </div>
+                    <p className="text-gray-600 mb-4">Enter the detailed information for this invoice including line items, descriptions, and amounts.</p>
+                    
+                    <div className="space-y-6">
+                      {/* Basic Invoice Information */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Invoice Number
+                          </label>
+                          <Input 
+                            value={invoiceData.invoiceNumber}
+                            onChange={(e) => setInvoiceData(prev => ({ ...prev, invoiceNumber: e.target.value }))}
+                            className="w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Period of Performance
+                          </label>
+                          <Input 
+                            value={invoiceData.periodOfPerformance}
+                            onChange={(e) => setInvoiceData(prev => ({ ...prev, periodOfPerformance: e.target.value }))}
+                            placeholder="e.g., October 1-31, 2025"
+                            className="w-full"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Invoice Description */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Invoice Description
+                        </label>
+                        <Textarea 
+                          value={invoiceData.description}
+                          onChange={(e) => setInvoiceData(prev => ({ ...prev, description: e.target.value }))}
+                          placeholder="Describe the services or deliverables being invoiced..."
+                          className="w-full"
+                          rows={3}
+                        />
+                      </div>
+
+                      {/* Line Items */}
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h6 className="font-medium text-gray-700">Line Items</h6>
+                          <Button variant="outline" size="sm" onClick={addLineItem}>
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Line Item
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-3">
+                          {invoiceData.lineItems.map((item, index) => (
+                            <Card key={item.id} className="p-4">
+                              <div className="grid grid-cols-12 gap-3 items-center">
+                                <div className="col-span-5">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Description</label>
+                                  <Input 
+                                    value={item.description}
+                                    onChange={(e) => updateLineItem(index, 'description', e.target.value)}
+                                    placeholder="Line item description"
+                                    className="w-full text-sm"
+                                  />
+                                </div>
+                                <div className="col-span-2">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Quantity</label>
+                                  <Input 
+                                    type="number"
+                                    value={item.quantity}
+                                    onChange={(e) => updateLineItem(index, 'quantity', Number(e.target.value))}
+                                    className="w-full text-sm"
+                                  />
+                                </div>
+                                <div className="col-span-2">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Unit Price</label>
+                                  <Input 
+                                    type="number"
+                                    value={item.unitPrice}
+                                    onChange={(e) => updateLineItem(index, 'unitPrice', Number(e.target.value))}
+                                    className="w-full text-sm"
+                                  />
+                                </div>
+                                <div className="col-span-2">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Total</label>
+                                  <Input 
+                                    value={`$${item.total.toLocaleString()}`}
+                                    readOnly
+                                    className="w-full text-sm bg-gray-50"
+                                  />
+                                </div>
+                                <div className="col-span-1">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => removeLineItem(index)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+
+                        {invoiceData.lineItems.length === 0 && (
+                          <div className="text-center py-8 text-gray-500">
+                            <FileText className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                            <p>No line items added yet. Click "Add Line Item" to get started.</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Summary */}
+                      <Card className="p-4 bg-gray-50">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Invoice Total:</span>
+                          <span className="text-xl font-bold">${calculateInvoiceTotal().toLocaleString()}</span>
+                        </div>
+                        {selectedRecipient && (
+                          <div className="mt-2 text-sm text-gray-600">
+                            <div className="flex justify-between">
+                              <span>Tax Withholding:</span>
+                              <span>${taxWithholding.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between font-medium">
+                              <span>Net Payment:</span>
+                              <span>${(calculateInvoiceTotal() - taxWithholding).toLocaleString()}</span>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    </div>
+                  </Card>
+
+                  <div className="flex justify-between space-x-3">
+                    <Button variant="outline" onClick={() => setCurrentStep('template')}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back: Template
+                    </Button>
+                    <Button 
+                      onClick={() => setCurrentStep('review')}
+                      disabled={invoiceData.lineItems.length === 0}
+                      className="btn-premium"
+                    >
+                      Next: Review & Validate
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 4: Review & Validation */}
+              {currentStep === 'review' && (
+                <>
+                  <Card className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <CheckCircle className="h-5 w-5 text-blue-600" />
+                      <h4 className="font-semibold">Step 4: Review & Validation</h4>
+                    </div>
+                    <p className="text-gray-600 mb-4">Review the invoice details and validate compliance with the selected template requirements.</p>
+                    
+                    <div className="space-y-6">
+                      {/* Invoice Summary */}
+                      <Card className="p-4">
+                        <h6 className="font-medium mb-3">Invoice Summary</h6>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">Invoice Number:</span>
+                            <p className="font-medium">{invoiceData.invoiceNumber}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Recipient:</span>
+                            <p className="font-medium">{selectedRecipient?.name}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Template:</span>
+                            <p className="font-medium">{selectedTemplate?.name}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">Total Amount:</span>
+                            <p className="font-medium">${calculateInvoiceTotal().toLocaleString()}</p>
+                          </div>
+                        </div>
+                      </Card>
+
+                      {/* Validation Results */}
+                      <Card className="p-4">
+                        <h6 className="font-medium mb-3">Validation Results</h6>
+                        {(() => {
+                          const validation = validateInvoice()
+                          return (
+                            <div className="space-y-2">
+                              {validation.valid ? (
+                                <div className="flex items-center space-x-2 text-green-600">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span>All validations passed successfully</span>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <div className="flex items-center space-x-2 text-red-600">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <span>Validation issues found:</span>
+                                  </div>
+                                  <ul className="ml-6 space-y-1">
+                                    {validation.issues.map((issue, index) => (
+                                      <li key={index} className="text-sm text-red-600">• {issue}</li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
+                      </Card>
+
+                      {/* Spirit AI Analysis */}
+                      <Card className="p-4 bg-blue-50">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <Brain className="h-4 w-4 text-blue-600" />
+                          <h6 className="font-medium text-blue-900">Spirit AI Analysis</h6>
+                        </div>
+                        <div className="space-y-2 text-sm text-blue-800">
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="h-3 w-3" />
+                            <span>Template compliance validated</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="h-3 w-3" />
+                            <span>Tax withholding calculated correctly</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <CheckCircle className="h-3 w-3" />
+                            <span>Line items properly formatted</span>
+                          </div>
+                          {selectedRecipient?.type === 'individual' && (
+                            <div className="flex items-center space-x-2">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Individual payment requirements met</span>
+                            </div>
+                          )}
+                          {selectedTemplate?.agency === 'DoTS' && (
+                            <div className="flex items-center space-x-2">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>DoTS agency requirements validated</span>
+                            </div>
+                          )}
+                        </div>
+                      </Card>
+                    </div>
+                  </Card>
+
+                  <div className="flex justify-between space-x-3">
+                    <Button variant="outline" onClick={() => setCurrentStep('details')}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back: Details
+                    </Button>
+                    <Button 
+                      onClick={() => setCurrentStep('build')}
+                      disabled={!validateInvoice().valid}
+                      className="btn-premium"
+                    >
+                      Next: Build Invoice
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Step 5: Build Invoice */}
+              {currentStep === 'build' && (
+                <>
+                  <Card className="p-6">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      <h4 className="font-semibold">Step 5: Build Final Invoice</h4>
+                    </div>
+                    <p className="text-gray-600 mb-4">Review the final invoice and submit for processing.</p>
+                    
+                    <div className="space-y-6">
+                      {/* Invoice Preview */}
+                      <Card className="p-6 border-2 border-gray-200">
+                        <div className="text-center mb-6">
+                          <h3 className="text-2xl font-bold text-gray-800">INVOICE</h3>
+                          <p className="text-gray-600">Invoice #{invoiceData.invoiceNumber}</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-8 mb-6">
+                          <div>
+                            <h6 className="font-medium text-gray-700 mb-2">Bill To:</h6>
+                            <div className="text-sm text-gray-600">
+                              <p className="font-medium">{selectedRecipient?.name}</p>
+                              <p>{selectedRecipient?.address.street}</p>
+                              <p>{selectedRecipient?.address.city}, {selectedRecipient?.address.state} {selectedRecipient?.address.zip}</p>
+                              <p>Tax ID: {selectedRecipient?.taxId}</p>
+                            </div>
+                          </div>
+                          <div>
+                            <h6 className="font-medium text-gray-700 mb-2">Contract Information:</h6>
+                            <div className="text-sm text-gray-600">
+                              <p>Contract: {contract.number}</p>
+                              <p>CLIN: {selectedCLIN.number}</p>
+                              <p>Period: {invoiceData.periodOfPerformance}</p>
+                              <p>Template: {selectedTemplate?.name}</p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-6">
+                          <h6 className="font-medium text-gray-700 mb-2">Description:</h6>
+                          <p className="text-sm text-gray-600">{invoiceData.description}</p>
+                        </div>
+                        
+                        <div className="mb-6">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 text-sm font-medium text-gray-700">Description</th>
+                                <th className="text-right py-2 text-sm font-medium text-gray-700">Quantity</th>
+                                <th className="text-right py-2 text-sm font-medium text-gray-700">Unit Price</th>
+                                <th className="text-right py-2 text-sm font-medium text-gray-700">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {invoiceData.lineItems.map((item, index) => (
+                                <tr key={index} className="border-b">
+                                  <td className="py-2 text-sm text-gray-600">{item.description}</td>
+                                  <td className="py-2 text-sm text-gray-600 text-right">{item.quantity}</td>
+                                  <td className="py-2 text-sm text-gray-600 text-right">${item.unitPrice.toLocaleString()}</td>
+                                  <td className="py-2 text-sm text-gray-600 text-right">${item.total.toLocaleString()}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr className="border-t-2">
+                                <td colSpan={3} className="py-2 text-sm font-medium text-gray-700 text-right">Total:</td>
+                                <td className="py-2 text-sm font-medium text-gray-700 text-right">${calculateInvoiceTotal().toLocaleString()}</td>
+                              </tr>
+                              {selectedRecipient && (
+                                <>
+                                  <tr>
+                                    <td colSpan={3} className="py-1 text-sm text-gray-600 text-right">Tax Withholding:</td>
+                                    <td className="py-1 text-sm text-gray-600 text-right">${taxWithholding.toLocaleString()}</td>
+                                  </tr>
+                                  <tr className="border-t">
+                                    <td colSpan={3} className="py-2 text-sm font-bold text-gray-800 text-right">Net Payment:</td>
+                                    <td className="py-2 text-sm font-bold text-gray-800 text-right">${(calculateInvoiceTotal() - taxWithholding).toLocaleString()}</td>
+                                  </tr>
+                                </>
+                              )}
+                            </tfoot>
+                          </table>
+                        </div>
+                        
+                        <div className="text-center text-sm text-gray-500">
+                          <p>This invoice complies with {selectedTemplate?.agency} requirements and has been validated by Spirit AI.</p>
+                        </div>
+                      </Card>
+                    </div>
+                  </Card>
+
+                  <div className="flex justify-between space-x-3">
+                    <Button variant="outline" onClick={() => setCurrentStep('review')}>
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back: Review
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        // Here you would submit the invoice
+                        console.log('Invoice submitted:', {
+                          ...invoiceData,
+                          recipient: selectedRecipient,
+                          template: selectedTemplate,
+                          clin: selectedCLIN,
+                          total: calculateInvoiceTotal(),
+                          taxWithholding,
+                          netPayment: calculateInvoiceTotal() - taxWithholding
+                        })
+                        setShowInvoiceBuilder(false)
+                      }}
+                      className="btn-premium"
+                    >
+                      Submit Invoice
+                      <Send className="h-4 w-4 ml-2" />
+                    </Button>
+                  </div>
+                </>
+              )}
+
+              {/* Contract Information (always visible) */}
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3">Contract Information</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">State:</span>
+                    <p className="font-medium">LA</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Agency:</span>
+                    <p className="font-medium">DoTS</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">RFP:</span>
+                    <p className="font-medium">24-IT-045</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Contract Type:</span>
+                    <p className="font-medium">FFP + T&M Option</p>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-gray-600">RFP:</span>
-                  <p className="font-medium">24-IT-045</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Contract Type:</span>
-                  <p className="font-medium">FFP + T&M Option</p>
-                </div>
-              </div>
-            </Card>
+              </Card>
 
             {/* CLIN Details */}
             <Card className="p-4">
