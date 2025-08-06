@@ -102,6 +102,7 @@ import {
   UserPlus,
   ArrowRight,
   Lightbulb,
+  ChevronLeft,
   Hash as HashIcon8,
   Hash as HashIcon9,
   Hash as HashIcon10
@@ -136,6 +137,83 @@ interface DeliverableTask {
     endTime?: string
     totalTime: number
   }
+}
+
+interface CalendarEvent {
+  id: string
+  title: string
+  description: string
+  date: string
+  type: 'deliverable' | 'invoice' | 'payment' | 'compliance' | 'inspection' | 'meeting'
+  priority: 'low' | 'medium' | 'high' | 'critical'
+  status: 'pending' | 'in-progress' | 'completed' | 'overdue'
+  assignedTo: string
+  contractId: string
+  relatedItems: {
+    deliverables?: string[]
+    invoices?: string[]
+    subcontractors?: string[]
+  }
+  attachments: string[]
+  notes: string
+  spiritValidation: {
+    isProcessing: boolean
+    issues: string[]
+    recommendations: string[]
+    automatedActions: string[]
+  }
+}
+
+interface CLIN {
+  id: string
+  number: string
+  title: string
+  description: string
+  type: 'FFP' | 'T&M' | 'CPFF' | 'IDIQ'
+  quantity: number
+  unit: string
+  unitPrice: number
+  totalAmount: number
+  period: string
+  deliverables: string[]
+  keyPersonnel: string[]
+  status: 'active' | 'completed' | 'suspended'
+  billingMatrix: {
+    monthly: number
+    quarterly: number
+    milestone: number
+    deliverable: number
+  }
+}
+
+interface Invoice {
+  id: string
+  invoiceNumber: string
+  contractId: string
+  clinId: string
+  subcontractorId?: string
+  description: string
+  quantity: number
+  unitPrice: number
+  totalAmount: number
+  submittedDate: string
+  dueDate: string
+  status: 'draft' | 'submitted' | 'under-review' | 'approved' | 'rejected' | 'paid'
+  aging: number
+  attachments: string[]
+  evidence: string[]
+  spiritValidation: {
+    contractCompliance: boolean
+    deliverableValidation: boolean
+    pricingValidation: boolean
+    documentationComplete: boolean
+    issues: string[]
+    recommendations: string[]
+  }
+  notes: string
+  reviewer: string
+  reviewDate?: string
+  paymentDate?: string
 }
 
 interface Deliverable {
@@ -347,6 +425,13 @@ export default function ContractWorkspacePage() {
   const [showTaskModal, setShowTaskModal] = useState(false)
   const [selectedDeliverable, setSelectedDeliverable] = useState<Deliverable | null>(null)
 
+  // Invoicing & Calendar State
+  const [showCalendarModal, setShowCalendarModal] = useState(false)
+  const [selectedCalendarEvent, setSelectedCalendarEvent] = useState<any>(null)
+  const [activeInvoicingTab, setActiveInvoicingTab] = useState('overview')
+  const [showInvoiceBuilder, setShowInvoiceBuilder] = useState(false)
+  const [selectedCLIN, setSelectedCLIN] = useState<any>(null)
+
   // Subcontractor Management State
   const [subcontractorFilter, setSubcontractorFilter] = useState('all')
   const [subcontractorSearch, setSubcontractorSearch] = useState('')
@@ -382,6 +467,225 @@ export default function ContractWorkspacePage() {
       overall: 92
     }
   })
+
+  const [clins] = useState<CLIN[]>([
+    {
+      id: 'clin-001',
+      number: '0001',
+      title: 'Program Management & Governance',
+      description: 'Provide program management office (PMO) oversight, coordination of deliverables, schedule adherence, risk management, and compliance.',
+      type: 'FFP',
+      quantity: 1,
+      unit: 'Monthly',
+      unitPrice: 13333,
+      totalAmount: 460000,
+      period: 'Base + 2 Option Years',
+      deliverables: ['PM Plan', 'Risk Register', 'Monthly Progress Reports', 'Stakeholder Comms'],
+      keyPersonnel: ['Program Manager (PMP)', 'Senior Scheduler', 'Quality Assurance Analyst'],
+      status: 'active',
+      billingMatrix: {
+        monthly: 13333,
+        quarterly: 40000,
+        milestone: 50000,
+        deliverable: 25000
+      }
+    },
+    {
+      id: 'clin-002',
+      number: '0002',
+      title: 'Cloud Architecture & Migration Services',
+      description: 'Design and implement cloud architecture, migration planning, and execution services.',
+      type: 'T&M',
+      quantity: 1,
+      unit: 'Lump Sum',
+      unitPrice: 2100000,
+      totalAmount: 2100000,
+      period: 'Base + 2 Option Years',
+      deliverables: ['Cloud Architecture Design', 'Migration Plan', 'Implementation Report'],
+      keyPersonnel: ['Cloud Architect', 'DevOps Engineer', 'Security Specialist'],
+      status: 'active',
+      billingMatrix: {
+        monthly: 175000,
+        quarterly: 525000,
+        milestone: 700000,
+        deliverable: 350000
+      }
+    },
+    {
+      id: 'clin-003',
+      number: '0003',
+      title: 'Cybersecurity & Compliance Integration',
+      description: 'Implement cybersecurity measures and ensure compliance with federal regulations.',
+      type: 'FFP',
+      quantity: 1,
+      unit: 'Lump Sum',
+      unitPrice: 860000,
+      totalAmount: 860000,
+      period: 'Base + 2 Option Years',
+      deliverables: ['Security Assessment', 'Compliance Report', 'Implementation Plan'],
+      keyPersonnel: ['Cybersecurity Specialist', 'Compliance Officer', 'Risk Analyst'],
+      status: 'active',
+      billingMatrix: {
+        monthly: 71667,
+        quarterly: 215000,
+        milestone: 286667,
+        deliverable: 143333
+      }
+    }
+  ])
+
+  const [invoices] = useState<Invoice[]>([
+    {
+      id: 'inv-001',
+      invoiceNumber: 'INV-00001',
+      contractId: 'c-001',
+      clinId: 'clin-001',
+      description: 'Program Management Services - October 2025',
+      quantity: 1,
+      unitPrice: 13333,
+      totalAmount: 13333,
+      submittedDate: '2025-10-01',
+      dueDate: '2025-10-31',
+      status: 'submitted',
+      aging: 5,
+      attachments: ['invoice.pdf', 'timesheet.xlsx'],
+      evidence: ['pm-report.pdf', 'risk-register.pdf'],
+      spiritValidation: {
+        contractCompliance: true,
+        deliverableValidation: true,
+        pricingValidation: true,
+        documentationComplete: false,
+        issues: ['PM report is missing for final period'],
+        recommendations: ['Submit PM report before payment approval']
+      },
+      notes: 'Monthly program management services including PMO oversight and coordination.',
+      reviewer: 'Sarah Johnson'
+    },
+    {
+      id: 'inv-002',
+      invoiceNumber: 'INV-00002',
+      contractId: 'c-001',
+      clinId: 'clin-002',
+      description: 'Cloud Architecture Design Phase',
+      quantity: 1,
+      unitPrice: 350000,
+      totalAmount: 350000,
+      submittedDate: '2025-09-15',
+      dueDate: '2025-10-15',
+      status: 'approved',
+      aging: 0,
+      attachments: ['invoice.pdf', 'design-docs.pdf'],
+      evidence: ['architecture-design.pdf', 'technical-specs.pdf'],
+      spiritValidation: {
+        contractCompliance: true,
+        deliverableValidation: true,
+        pricingValidation: true,
+        documentationComplete: true,
+        issues: [],
+        recommendations: ['Proceed with payment approval']
+      },
+      notes: 'Cloud architecture design deliverables completed and approved.',
+      reviewer: 'Mike Davis',
+      reviewDate: '2025-10-10'
+    },
+    {
+      id: 'inv-003',
+      invoiceNumber: 'INV-00003',
+      contractId: 'c-001',
+      clinId: 'clin-003',
+      description: 'Cybersecurity Assessment',
+      quantity: 1,
+      unitPrice: 143333,
+      totalAmount: 143333,
+      submittedDate: '2025-10-05',
+      dueDate: '2025-11-05',
+      status: 'under-review',
+      aging: 2,
+      attachments: ['invoice.pdf', 'assessment-report.pdf'],
+      evidence: ['security-assessment.pdf', 'compliance-checklist.pdf'],
+      spiritValidation: {
+        contractCompliance: true,
+        deliverableValidation: false,
+        pricingValidation: true,
+        documentationComplete: true,
+        issues: ['Security assessment incomplete'],
+        recommendations: ['Complete security assessment before approval']
+      },
+      notes: 'Cybersecurity assessment in progress, partial deliverables submitted.',
+      reviewer: 'John Smith'
+    }
+  ])
+
+  const [calendarEvents] = useState<CalendarEvent[]>([
+    {
+      id: 'cal-001',
+      title: 'Monthly Status Report Due',
+      description: 'Submit monthly program status report for October 2025',
+      date: '2025-10-31',
+      type: 'deliverable',
+      priority: 'high',
+      status: 'pending',
+      assignedTo: 'Mike Davis',
+      contractId: 'c-001',
+      relatedItems: {
+        deliverables: ['d-001'],
+        invoices: ['inv-001']
+      },
+      attachments: ['template.docx', 'guidelines.pdf'],
+      notes: 'Include progress on all CLINs and subcontractor performance',
+      spiritValidation: {
+        isProcessing: false,
+        issues: [],
+        recommendations: ['Prepare executive summary', 'Include risk updates'],
+        automatedActions: ['Reminder sent', 'Template provided']
+      }
+    },
+    {
+      id: 'cal-002',
+      title: 'Invoice #INV-00001 Payment Due',
+      description: 'Payment due for Program Management Services',
+      date: '2025-10-31',
+      type: 'payment',
+      priority: 'critical',
+      status: 'pending',
+      assignedTo: 'Sarah Johnson',
+      contractId: 'c-001',
+      relatedItems: {
+        invoices: ['inv-001']
+      },
+      attachments: ['invoice.pdf', 'approval-form.pdf'],
+      notes: 'Ensure all deliverables are complete before payment',
+      spiritValidation: {
+        isProcessing: false,
+        issues: ['PM report missing'],
+        recommendations: ['Submit missing documentation'],
+        automatedActions: ['Payment hold applied', 'Notification sent']
+      }
+    },
+    {
+      id: 'cal-003',
+      title: 'Final Inspection - Building 3',
+      description: 'Final inspection for HVAC maintenance services',
+      date: '2025-10-30',
+      type: 'inspection',
+      priority: 'high',
+      status: 'pending',
+      assignedTo: 'Robert Wilson',
+      contractId: 'c-001',
+      relatedItems: {
+        deliverables: ['d-002'],
+        subcontractors: ['sub1']
+      },
+      attachments: ['inspection-checklist.pdf', 'safety-protocols.pdf'],
+      notes: 'Coordinate with subcontractor and safety officer',
+      spiritValidation: {
+        isProcessing: false,
+        issues: [],
+        recommendations: ['Schedule safety briefing', 'Prepare inspection team'],
+        automatedActions: ['Calendar invite sent', 'Checklist provided']
+      }
+    }
+  ])
 
   const [deliverables] = useState<Deliverable[]>([
     {
@@ -768,6 +1072,44 @@ export default function ContractWorkspacePage() {
 
   const updateTaskProgress = (taskId: string, progress: number) => {
     console.log(`Updating task ${taskId} progress to ${progress}%`)
+  }
+
+  // Invoicing Helper Functions
+  const getInvoiceStats = () => {
+    const total = invoices.length
+    const submitted = invoices.filter(inv => inv.status === 'submitted').length
+    const underReview = invoices.filter(inv => inv.status === 'under-review').length
+    const approved = invoices.filter(inv => inv.status === 'approved').length
+    const paid = invoices.filter(inv => inv.status === 'paid').length
+    const overdue = invoices.filter(inv => inv.aging > 30).length
+
+    return { total, submitted, underReview, approved, paid, overdue }
+  }
+
+  const getAgingBreakdown = () => {
+    const over30 = invoices.filter(inv => inv.aging > 30).length
+    const days15to30 = invoices.filter(inv => inv.aging > 15 && inv.aging <= 30).length
+    const under15 = invoices.filter(inv => inv.aging <= 15).length
+
+    return { over30, days15to30, under15 }
+  }
+
+  const getCalendarEventsByMonth = (year: number, month: number) => {
+    return calendarEvents.filter(event => {
+      const eventDate = new Date(event.date)
+      return eventDate.getFullYear() === year && eventDate.getMonth() === month
+    })
+  }
+
+  const getUpcomingEvents = (days: number = 7) => {
+    const today = new Date()
+    const futureDate = new Date()
+    futureDate.setDate(today.getDate() + days)
+
+    return calendarEvents.filter(event => {
+      const eventDate = new Date(event.date)
+      return eventDate >= today && eventDate <= futureDate
+    })
   }
 
   const getSubcontractorStats = () => {
@@ -1432,6 +1774,722 @@ export default function ContractWorkspacePage() {
     )
   }
 
+  const renderInvoicingTab = () => {
+    const invoiceStats = getInvoiceStats()
+    const agingBreakdown = getAgingBreakdown()
+
+    return (
+      <div className="space-y-6">
+        {/* Invoicing Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Payment & Invoicing</h3>
+            <p className="text-sm text-gray-600">Manage invoices, payments, and billing for this contract</p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" onClick={() => setShowCalendarModal(true)}>
+              <Calendar className="h-4 w-4 mr-2" />
+              Contract Calendar
+            </Button>
+            <Button className="btn-premium" onClick={() => setShowInvoiceBuilder(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Invoice
+            </Button>
+          </div>
+        </div>
+
+        {/* Invoicing Tabs */}
+        <Tabs value={activeInvoicingTab} onValueChange={setActiveInvoicingTab} className="space-y-6">
+          <TabsList className="flex w-full bg-gray-100 p-1 rounded-lg">
+            <TabsTrigger value="overview" className="text-xs flex-shrink-0">Overview</TabsTrigger>
+            <TabsTrigger value="invoice-builder" className="text-xs flex-shrink-0">Invoice Builder</TabsTrigger>
+            <TabsTrigger value="clin-matrix" className="text-xs flex-shrink-0">CLIN Billing Matrix</TabsTrigger>
+            <TabsTrigger value="export" className="text-xs flex-shrink-0">Export & Submission</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            {/* Invoice Statistics */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{invoiceStats.submitted}</div>
+                  <div className="text-sm text-gray-600">Submitted</div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">{invoiceStats.underReview}</div>
+                  <div className="text-sm text-gray-600">Under Review</div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{invoiceStats.approved}</div>
+                  <div className="text-sm text-gray-600">Approved</div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{invoiceStats.paid}</div>
+                  <div className="text-sm text-gray-600">Paid</div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Aging Tracker */}
+            <Card className="p-6">
+              <h4 className="font-semibold mb-4">Aging Tracker</h4>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">30+ days</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-32 h-3 bg-red-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-red-500 rounded-full" 
+                        style={{ width: `${(agingBreakdown.over30 / invoiceStats.total) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{agingBreakdown.over30}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">15-30 days</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-32 h-3 bg-orange-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-orange-500 rounded-full" 
+                        style={{ width: `${(agingBreakdown.days15to30 / invoiceStats.total) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{agingBreakdown.days15to30}</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">&lt;15 days</span>
+                  <div className="flex items-center space-x-2">
+                    <div className="w-32 h-3 bg-green-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-green-500 rounded-full" 
+                        style={{ width: `${(agingBreakdown.under15 / invoiceStats.total) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium">{agingBreakdown.under15}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Alerts */}
+            <Card className="p-6">
+              <h4 className="font-semibold mb-4">Alerts</h4>
+              <div className="space-y-3">
+                {invoices.filter(inv => inv.status === 'submitted' && inv.aging > 7).map(invoice => (
+                  <div key={invoice.id} className="flex items-center space-x-3 p-3 bg-red-50 rounded-lg border-l-4 border-red-500">
+                    <div className="w-2 h-2 bg-red-500 rounded-full" />
+                    <span className="text-sm text-red-800">
+                      {invoice.invoiceNumber} is overdue (+{invoice.aging} days)
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-red-500" />
+                  </div>
+                ))}
+                {invoices.filter(inv => inv.status === 'under-review').map(invoice => (
+                  <div key={invoice.id} className="flex items-center space-x-3 p-3 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                    <span className="text-sm text-blue-800">
+                      {invoice.invoiceNumber} pending review
+                    </span>
+                    <ChevronRight className="h-4 w-4 text-blue-500" />
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Invoice Table */}
+            <Card className="p-6">
+              <h4 className="font-semibold mb-4">Recent Invoices</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">Invoice</th>
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">CLIN</th>
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">Description</th>
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">Status</th>
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.map(invoice => {
+                      const clin = clins.find(c => c.id === invoice.clinId)
+                      return (
+                        <tr key={invoice.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 text-sm font-medium">{invoice.invoiceNumber}</td>
+                          <td className="py-3 text-sm text-gray-600">{clin?.number}</td>
+                          <td className="py-3 text-sm text-gray-600">{invoice.description}</td>
+                          <td className="py-3">
+                            <Badge 
+                              variant={
+                                invoice.status === 'approved' ? 'default' :
+                                invoice.status === 'submitted' ? 'secondary' :
+                                invoice.status === 'under-review' ? 'outline' : 'destructive'
+                              }
+                              className="text-xs"
+                            >
+                              {invoice.status.toUpperCase()}
+                            </Badge>
+                          </td>
+                          <td className="py-3 text-sm font-medium">${invoice.totalAmount.toLocaleString()}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="invoice-builder" className="space-y-6">
+            <Card className="p-6">
+              <h4 className="font-semibold mb-4">Invoice Builder</h4>
+              <p className="text-gray-600 mb-6">Select a CLIN to build an invoice</p>
+              
+              <div className="space-y-4">
+                {clins.map(clin => (
+                  <Card key={clin.id} className="p-4 border-2 border-dashed border-gray-200 hover:border-blue-300 cursor-pointer" onClick={() => setSelectedCLIN(clin)}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="font-medium">CLIN {clin.number} - {clin.title}</h5>
+                        <p className="text-sm text-gray-600">{clin.description}</p>
+                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                          <span>Type: {clin.type}</span>
+                          <span>Unit: {clin.unit}</span>
+                          <span>Total: ${clin.totalAmount.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-gray-400" />
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="clin-matrix" className="space-y-6">
+            <Card className="p-6">
+              <h4 className="font-semibold mb-4">CLIN Billing Matrix</h4>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">CLIN</th>
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">Monthly</th>
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">Quarterly</th>
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">Milestone</th>
+                      <th className="text-left py-2 text-sm font-medium text-gray-600">Deliverable</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clins.map(clin => (
+                      <tr key={clin.id} className="border-b">
+                        <td className="py-3 text-sm font-medium">CLIN {clin.number}</td>
+                        <td className="py-3 text-sm text-gray-600">${clin.billingMatrix.monthly.toLocaleString()}</td>
+                        <td className="py-3 text-sm text-gray-600">${clin.billingMatrix.quarterly.toLocaleString()}</td>
+                        <td className="py-3 text-sm text-gray-600">${clin.billingMatrix.milestone.toLocaleString()}</td>
+                        <td className="py-3 text-sm text-gray-600">${clin.billingMatrix.deliverable.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="export" className="space-y-6">
+            <Card className="p-6">
+              <h4 className="font-semibold mb-4">Export & Submission</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                  <Download className="h-6 w-6 mb-2" />
+                  <span>Export Invoice Report</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                  <Calendar className="h-6 w-6 mb-2" />
+                  <span>Export Contract Calendar</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                  <FileText className="h-6 w-6 mb-2" />
+                  <span>Generate Payment Report</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col items-center justify-center">
+                  <BarChart3 className="h-6 w-6 mb-2" />
+                  <span>Financial Analytics</span>
+                </Button>
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+    )
+  }
+
+  const renderInvoiceBuilderModal = () => {
+    if (!selectedCLIN) return null
+
+    return (
+      <Dialog open={showInvoiceBuilder} onOpenChange={setShowInvoiceBuilder}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <FileText className="h-5 w-5" />
+              <span>Invoice Builder - CLIN {selectedCLIN.number}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Build and submit invoices for {selectedCLIN.title}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Contract Information */}
+            <Card className="p-4">
+              <h4 className="font-semibold mb-3">Contract Information</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">State:</span>
+                  <p className="font-medium">LA</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Agency:</span>
+                  <p className="font-medium">DoTS</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">RFP:</span>
+                  <p className="font-medium">24-IT-045</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Contract Type:</span>
+                  <p className="font-medium">FFP + T&M Option</p>
+                </div>
+              </div>
+            </Card>
+
+            {/* CLIN Details */}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold">CLIN {selectedCLIN.number} - {selectedCLIN.title}</h4>
+                <Badge variant="outline">Draft</Badge>
+              </div>
+              
+              <p className="text-sm text-gray-600 mb-4">{selectedCLIN.description}</p>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
+                <div>
+                  <span className="text-gray-600">Quantity:</span>
+                  <p className="font-medium">{selectedCLIN.quantity}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Unit:</span>
+                  <p className="font-medium">{selectedCLIN.unit}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Period:</span>
+                  <p className="font-medium">{selectedCLIN.period}</p>
+                </div>
+                <div>
+                  <span className="text-gray-600">Total:</span>
+                  <p className="font-medium">${selectedCLIN.totalAmount.toLocaleString()}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h6 className="font-medium mb-2">Deliverables</h6>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {selectedCLIN.deliverables.map((deliverable: string, index: number) => (
+                      <li key={index} className="flex items-center space-x-2">
+                        <CheckSquare className="h-3 w-3 text-green-500" />
+                        <span>{deliverable}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h6 className="font-medium mb-2">Key Personnel</h6>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    {selectedCLIN.keyPersonnel.map((person: string, index: number) => (
+                      <li key={index} className="flex items-center space-x-2">
+                        <UserCheck className="h-3 w-3 text-blue-500" />
+                        <span>{person}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Card>
+
+            {/* Invoice Details */}
+            <Card className="p-4">
+              <h4 className="font-semibold mb-4">Invoice Details</h4>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Invoice Description
+                  </label>
+                  <Textarea 
+                    placeholder="Describe the services or deliverables being invoiced..."
+                    className="w-full"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Quantity Delivered
+                    </label>
+                    <Input type="number" defaultValue="1" className="w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Total Amount
+                    </label>
+                    <Input 
+                      type="number" 
+                      defaultValue={selectedCLIN.unitPrice} 
+                      className="w-full" 
+                    />
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Spirit Validation */}
+            <Card className="p-4 bg-purple-50">
+              <div className="flex items-center space-x-2 mb-3">
+                <Brain className="h-4 w-4 text-purple-600" />
+                <h4 className="font-semibold text-purple-900">Spirit Validation</h4>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-purple-800">Matches contract unit price.</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-4 w-4 text-red-500" />
+                  <span className="text-sm text-purple-800">
+                    PM report is missing for final period: Office united decd of the deliverable.
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <span className="text-sm text-purple-800">Billing dates validated.</span>
+                </div>
+              </div>
+            </Card>
+
+            {/* Evidence Upload */}
+            <Card className="p-4">
+              <h4 className="font-semibold mb-3">Evidence Upload</h4>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-sm text-gray-600">
+                  Drag and drop evidence or click to upload
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Supports PDF, DOC, XLS, and image files
+                </p>
+              </div>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInvoiceBuilder(false)}>
+              Cancel
+            </Button>
+            <Button className="btn-premium">
+              Submit Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  const renderCalendarModal = () => {
+    const currentDate = new Date()
+    const currentMonth = currentDate.getMonth()
+    const currentYear = currentDate.getFullYear()
+    const monthEvents = getCalendarEventsByMonth(currentYear, currentMonth)
+    const upcomingEvents = getUpcomingEvents(7)
+
+    const getDaysInMonth = (year: number, month: number) => {
+      return new Date(year, month + 1, 0).getDate()
+    }
+
+    const getFirstDayOfMonth = (year: number, month: number) => {
+      return new Date(year, month, 1).getDay()
+    }
+
+    const getEventsForDay = (day: number) => {
+      return monthEvents.filter(event => {
+        const eventDate = new Date(event.date)
+        return eventDate.getDate() === day
+      })
+    }
+
+    const getEventTypeColor = (type: string) => {
+      switch (type) {
+        case 'deliverable': return 'bg-blue-100 text-blue-800 border-blue-200'
+        case 'invoice': return 'bg-purple-100 text-purple-800 border-purple-200'
+        case 'payment': return 'bg-green-100 text-green-800 border-green-200'
+        case 'compliance': return 'bg-orange-100 text-orange-800 border-orange-200'
+        case 'inspection': return 'bg-red-100 text-red-800 border-red-200'
+        case 'meeting': return 'bg-gray-100 text-gray-800 border-gray-200'
+        default: return 'bg-gray-100 text-gray-800 border-gray-200'
+      }
+    }
+
+    const getEventPriorityColor = (priority: string) => {
+      switch (priority) {
+        case 'critical': return 'border-l-4 border-red-500'
+        case 'high': return 'border-l-4 border-orange-500'
+        case 'medium': return 'border-l-4 border-yellow-500'
+        case 'low': return 'border-l-4 border-green-500'
+        default: return 'border-l-4 border-gray-500'
+      }
+    }
+
+    return (
+      <Dialog open={showCalendarModal} onOpenChange={setShowCalendarModal}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Calendar className="h-5 w-5" />
+              <span>Contract Calendar - {contract.title}</span>
+            </DialogTitle>
+            <DialogDescription>
+              View and manage all contract-related events, deliverables, and deadlines.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Calendar View */}
+            <div className="lg:col-span-2">
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="font-semibold">October 2025</h4>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm">
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {/* Day Headers */}
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                    <div key={day} className="p-2 text-center text-sm font-medium text-gray-600 bg-gray-50">
+                      {day}
+                    </div>
+                  ))}
+
+                  {/* Calendar Days */}
+                  {Array.from({ length: getFirstDayOfMonth(currentYear, currentMonth) }, (_, i) => (
+                    <div key={`empty-${i}`} className="p-2 min-h-[80px] bg-gray-50" />
+                  ))}
+
+                  {Array.from({ length: getDaysInMonth(currentYear, currentMonth) }, (_, i) => {
+                    const day = i + 1
+                    const dayEvents = getEventsForDay(day)
+                    const isToday = day === currentDate.getDate()
+
+                    return (
+                      <div 
+                        key={day} 
+                        className={`p-2 min-h-[80px] border ${isToday ? 'bg-blue-50 border-blue-200' : 'bg-white border-gray-200'}`}
+                      >
+                        <div className={`text-sm font-medium ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                          {day}
+                        </div>
+                        <div className="space-y-1 mt-1">
+                          {dayEvents.slice(0, 2).map(event => (
+                            <div
+                              key={event.id}
+                              className={`text-xs p-1 rounded cursor-pointer ${getEventTypeColor(event.type)} ${getEventPriorityColor(event.priority)}`}
+                              onClick={() => setSelectedCalendarEvent(event)}
+                            >
+                              {event.title}
+                            </div>
+                          ))}
+                          {dayEvents.length > 2 && (
+                            <div className="text-xs text-gray-500 text-center">
+                              +{dayEvents.length - 2} more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Card>
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-4">
+              {/* Quick Actions */}
+              <Card className="p-4">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Plus className="h-4 w-4" />
+                  <h5 className="font-medium">Quick Actions</h5>
+                </div>
+                <div className="space-y-2">
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Add Event
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Generate Report
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Upcoming Events */}
+              <Card className="p-4">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Clock className="h-4 w-4" />
+                  <h5 className="font-medium">Upcoming (7 days)</h5>
+                </div>
+                <div className="space-y-2">
+                  {upcomingEvents.map(event => (
+                    <div
+                      key={event.id}
+                      className={`p-2 rounded cursor-pointer ${getEventTypeColor(event.type)} ${getEventPriorityColor(event.priority)}`}
+                      onClick={() => setSelectedCalendarEvent(event)}
+                    >
+                      <div className="text-xs font-medium">{event.title}</div>
+                      <div className="text-xs opacity-75">{new Date(event.date).toLocaleDateString()}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Spirit AI Insights */}
+              <Card className="p-4 bg-blue-50">
+                <div className="flex items-center space-x-2 mb-3">
+                  <Brain className="h-4 w-4 text-blue-600" />
+                  <h5 className="font-medium text-blue-900">Spirit AI Insights</h5>
+                </div>
+                <div className="space-y-2 text-sm text-blue-800">
+                  <div>• The data is up to date.</div>
+                  <div>• {upcomingEvents.length} tasks are due this week.</div>
+                  <div>• Download your contract calendar via 'Generate Report'.</div>
+                </div>
+              </Card>
+            </div>
+          </div>
+
+          {/* Event Details Modal */}
+          {selectedCalendarEvent && (
+            <Dialog open={!!selectedCalendarEvent} onOpenChange={() => setSelectedCalendarEvent(null)}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center space-x-2">
+                    <div className={`w-3 h-3 rounded-full ${getEventTypeColor(selectedCalendarEvent.type).split(' ')[0]}`} />
+                    <span>{selectedCalendarEvent.title}</span>
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div>
+                    <h6 className="font-medium mb-2">Description</h6>
+                    <p className="text-sm text-gray-600">{selectedCalendarEvent.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h6 className="font-medium mb-1">Date</h6>
+                      <p className="text-sm text-gray-600">{new Date(selectedCalendarEvent.date).toLocaleDateString()}</p>
+                    </div>
+                    <div>
+                      <h6 className="font-medium mb-1">Assigned To</h6>
+                      <p className="text-sm text-gray-600">{selectedCalendarEvent.assignedTo}</p>
+                    </div>
+                    <div>
+                      <h6 className="font-medium mb-1">Priority</h6>
+                      <Badge variant="outline" className="text-xs">
+                        {selectedCalendarEvent.priority.toUpperCase()}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h6 className="font-medium mb-1">Status</h6>
+                      <Badge 
+                        variant={
+                          selectedCalendarEvent.status === 'completed' ? 'default' :
+                          selectedCalendarEvent.status === 'in-progress' ? 'secondary' : 'outline'
+                        }
+                        className="text-xs"
+                      >
+                        {selectedCalendarEvent.status.toUpperCase()}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {selectedCalendarEvent.notes && (
+                    <div>
+                      <h6 className="font-medium mb-2">Notes</h6>
+                      <p className="text-sm text-gray-600">{selectedCalendarEvent.notes}</p>
+                    </div>
+                  )}
+
+                  {selectedCalendarEvent.spiritValidation.recommendations.length > 0 && (
+                    <div>
+                      <h6 className="font-medium mb-2">Spirit AI Recommendations</h6>
+                      <ul className="text-sm text-gray-600 space-y-1">
+                        {selectedCalendarEvent.spiritValidation.recommendations.map((rec: string, index: number) => (
+                          <li key={index} className="flex items-center space-x-2">
+                            <Lightbulb className="h-3 w-3 text-yellow-500" />
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="flex items-center space-x-2 pt-4">
+                    <Button variant="outline" size="sm">
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit Event
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      Add to Calendar
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Download className="h-4 w-4 mr-1" />
+                      Export
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCalendarModal(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   const renderSubcontractorsTab = () => {
     const stats = getSubcontractorStats()
     const filteredSubcontractors = getFilteredSubcontractors()
@@ -1888,11 +2946,21 @@ export default function ContractWorkspacePage() {
             {renderSubcontractorsTab()}
           </TabsContent>
 
+          <TabsContent value="invoicing" className="space-y-6">
+            {renderInvoicingTab()}
+          </TabsContent>
+
           {/* Add other tab contents here */}
         </Tabs>
 
         {/* Task Management Modal */}
         {renderTaskModal()}
+
+        {/* Calendar Modal */}
+        {renderCalendarModal()}
+
+        {/* Invoice Builder Modal */}
+        {renderInvoiceBuilderModal()}
       </div>
     </div>
   )
