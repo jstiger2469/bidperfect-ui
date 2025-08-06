@@ -1478,6 +1478,7 @@ export default function ContractWorkspacePage() {
     setSelectedRecipient(null)
     setSelectedTemplate(null)
     setTaxWithholding(0)
+    setShowInvoiceBuilder(true)
   }
 
   const getSubcontractorStats = () => {
