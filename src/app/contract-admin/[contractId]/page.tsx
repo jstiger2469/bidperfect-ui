@@ -186,12 +186,73 @@ interface CLIN {
   }
 }
 
+interface InvoiceTemplate {
+  id: string
+  name: string
+  agency: string
+  solicitationType: string
+  requirements: {
+    requiredFields: string[]
+    optionalFields: string[]
+    attachments: string[]
+    certifications: string[]
+    validations: string[]
+  }
+  format: {
+    headerFields: string[]
+    lineItemFields: string[]
+    footerFields: string[]
+    customFields: Record<string, any>
+  }
+  spiritValidation: {
+    rules: string[]
+    checks: string[]
+    autoValidation: boolean
+  }
+}
+
+interface PaymentRecipient {
+  id: string
+  name: string
+  type: 'subcontractor' | 'individual' | 'consultant' | 'vendor'
+  taxId: string
+  address: {
+    street: string
+    city: string
+    state: string
+    zip: string
+    country: string
+  }
+  contact: {
+    name: string
+    email: string
+    phone: string
+  }
+  paymentInfo: {
+    method: 'check' | 'ach' | 'wire' | 'credit-card'
+    accountNumber?: string
+    routingNumber?: string
+    bankName?: string
+  }
+  taxClassification: 'w2' | '1099' | 'corporate' | 'foreign'
+  certifications: {
+    sam: boolean
+    cage: boolean
+    duns: boolean
+    taxClearance: boolean
+    other: string[]
+  }
+  status: 'active' | 'suspended' | 'terminated'
+}
+
 interface Invoice {
   id: string
   invoiceNumber: string
   contractId: string
   clinId: string
-  subcontractorId?: string
+  recipientId: string
+  recipientType: 'subcontractor' | 'individual' | 'consultant' | 'vendor'
+  templateId: string
   description: string
   quantity: number
   unitPrice: number
@@ -202,18 +263,25 @@ interface Invoice {
   aging: number
   attachments: string[]
   evidence: string[]
+  customFields: Record<string, any>
   spiritValidation: {
     contractCompliance: boolean
     deliverableValidation: boolean
     pricingValidation: boolean
     documentationComplete: boolean
+    agencyCompliance: boolean
+    taxCompliance: boolean
     issues: string[]
     recommendations: string[]
+    validationScore: number
   }
   notes: string
   reviewer: string
   reviewDate?: string
   paymentDate?: string
+  paymentMethod: 'check' | 'ach' | 'wire' | 'credit-card'
+  taxWithholding: number
+  netPayment: number
 }
 
 interface Deliverable {
@@ -540,6 +608,9 @@ export default function ContractWorkspacePage() {
       invoiceNumber: 'INV-00001',
       contractId: 'c-001',
       clinId: 'clin-001',
+      recipientId: 'recipient-001',
+      recipientType: 'subcontractor',
+      templateId: 'template-dots',
       description: 'Program Management Services - October 2025',
       quantity: 1,
       unitPrice: 13333,
@@ -550,22 +621,35 @@ export default function ContractWorkspacePage() {
       aging: 5,
       attachments: ['invoice.pdf', 'timesheet.xlsx'],
       evidence: ['pm-report.pdf', 'risk-register.pdf'],
+      customFields: {
+        'dots-specific': 'DoTS agency requirements',
+        'compliance-checks': 'Federal compliance validation'
+      },
       spiritValidation: {
         contractCompliance: true,
         deliverableValidation: true,
         pricingValidation: true,
         documentationComplete: false,
+        agencyCompliance: true,
+        taxCompliance: true,
         issues: ['PM report is missing for final period'],
-        recommendations: ['Submit PM report before payment approval']
+        recommendations: ['Submit PM report before payment approval'],
+        validationScore: 85
       },
       notes: 'Monthly program management services including PMO oversight and coordination.',
-      reviewer: 'Sarah Johnson'
+      reviewer: 'Sarah Johnson',
+      paymentMethod: 'ach',
+      taxWithholding: 0,
+      netPayment: 13333
     },
     {
       id: 'inv-002',
       invoiceNumber: 'INV-00002',
       contractId: 'c-001',
       clinId: 'clin-002',
+      recipientId: 'recipient-003',
+      recipientType: 'consultant',
+      templateId: 'template-army',
       description: 'Cloud Architecture Design Phase',
       quantity: 1,
       unitPrice: 350000,
@@ -576,23 +660,36 @@ export default function ContractWorkspacePage() {
       aging: 0,
       attachments: ['invoice.pdf', 'design-docs.pdf'],
       evidence: ['architecture-design.pdf', 'technical-specs.pdf'],
+      customFields: {
+        'army-specific': 'USACE requirements',
+        'milestone-tracking': 'Milestone completion tracking'
+      },
       spiritValidation: {
         contractCompliance: true,
         deliverableValidation: true,
         pricingValidation: true,
         documentationComplete: true,
+        agencyCompliance: true,
+        taxCompliance: true,
         issues: [],
-        recommendations: ['Proceed with payment approval']
+        recommendations: ['Proceed with payment approval'],
+        validationScore: 95
       },
       notes: 'Cloud architecture design deliverables completed and approved.',
       reviewer: 'Mike Davis',
-      reviewDate: '2025-10-10'
+      reviewDate: '2025-10-10',
+      paymentMethod: 'wire',
+      taxWithholding: 0,
+      netPayment: 350000
     },
     {
       id: 'inv-003',
       invoiceNumber: 'INV-00003',
       contractId: 'c-001',
       clinId: 'clin-003',
+      recipientId: 'recipient-002',
+      recipientType: 'individual',
+      templateId: 'template-individual',
       description: 'Cybersecurity Assessment',
       quantity: 1,
       unitPrice: 143333,
@@ -603,16 +700,209 @@ export default function ContractWorkspacePage() {
       aging: 2,
       attachments: ['invoice.pdf', 'assessment-report.pdf'],
       evidence: ['security-assessment.pdf', 'compliance-checklist.pdf'],
+      customFields: {
+        'individual-specific': 'Individual consultant requirements',
+        'tax-tracking': 'Tax withholding and compliance'
+      },
       spiritValidation: {
         contractCompliance: true,
         deliverableValidation: false,
         pricingValidation: true,
         documentationComplete: true,
+        agencyCompliance: true,
+        taxCompliance: true,
         issues: ['Security assessment incomplete'],
-        recommendations: ['Complete security assessment before approval']
+        recommendations: ['Complete security assessment before approval'],
+        validationScore: 75
       },
       notes: 'Cybersecurity assessment in progress, partial deliverables submitted.',
-      reviewer: 'John Smith'
+      reviewer: 'John Smith',
+      paymentMethod: 'check',
+      taxWithholding: 14333,
+      netPayment: 129000
+    }
+  ])
+
+  const [invoiceTemplates] = useState<InvoiceTemplate[]>([
+    {
+      id: 'template-dots',
+      name: 'DoTS Standard Invoice Template',
+      agency: 'DoTS',
+      solicitationType: 'FFP + T&M',
+      requirements: {
+        requiredFields: ['invoiceNumber', 'contractNumber', 'clinNumber', 'periodOfPerformance', 'deliverables', 'certifications'],
+        optionalFields: ['subcontractorInfo', 'travelExpenses', 'materials'],
+        attachments: ['timesheet', 'deliverableEvidence', 'certificationForms'],
+        certifications: ['samCertification', 'cageCode', 'taxClearance'],
+        validations: ['pricingValidation', 'deliverableValidation', 'complianceCheck']
+      },
+      format: {
+        headerFields: ['contractNumber', 'invoiceNumber', 'periodOfPerformance', 'subcontractorInfo'],
+        lineItemFields: ['clinNumber', 'description', 'quantity', 'unitPrice', 'total'],
+        footerFields: ['certifications', 'authorizedSignature', 'date'],
+        customFields: {
+          'dots-specific': 'DoTS agency requirements',
+          'compliance-checks': 'Federal compliance validation'
+        }
+      },
+      spiritValidation: {
+        rules: ['FAR compliance', 'DoTS specific requirements', 'tax withholding rules'],
+        checks: ['pricing accuracy', 'deliverable completion', 'certification validity'],
+        autoValidation: true
+      }
+    },
+    {
+      id: 'template-army',
+      name: 'US Army Corps Invoice Template',
+      agency: 'US Army Corps of Engineers',
+      solicitationType: 'Fixed Price',
+      requirements: {
+        requiredFields: ['invoiceNumber', 'contractNumber', 'clinNumber', 'milestoneCompletion', 'qualityAssurance'],
+        optionalFields: ['subcontractorPerformance', 'safetyCompliance'],
+        attachments: ['milestoneEvidence', 'qualityReports', 'safetyCertifications'],
+        certifications: ['cageCode', 'samCertification', 'safetyCertification'],
+        validations: ['milestoneValidation', 'qualityValidation', 'safetyValidation']
+      },
+      format: {
+        headerFields: ['contractNumber', 'invoiceNumber', 'milestone', 'qualityAssurance'],
+        lineItemFields: ['clinNumber', 'milestoneDescription', 'completionDate', 'amount'],
+        footerFields: ['qualityCertification', 'safetyCertification', 'authorizedSignature'],
+        customFields: {
+          'army-specific': 'USACE requirements',
+          'milestone-tracking': 'Milestone completion tracking'
+        }
+      },
+      spiritValidation: {
+        rules: ['Army Corps requirements', 'milestone validation', 'quality assurance'],
+        checks: ['milestone completion', 'quality standards', 'safety compliance'],
+        autoValidation: true
+      }
+    },
+    {
+      id: 'template-individual',
+      name: 'Individual Consultant Invoice Template',
+      agency: 'Generic',
+      solicitationType: 'T&M',
+      requirements: {
+        requiredFields: ['invoiceNumber', 'contractNumber', 'timesheet', 'hourlyRate', 'taxInfo'],
+        optionalFields: ['expenseReimbursement', 'travelLog'],
+        attachments: ['timesheet', 'expenseReceipts', 'taxForms'],
+        certifications: ['taxClearance', 'backgroundCheck'],
+        validations: ['timeValidation', 'rateValidation', 'taxCompliance']
+      },
+      format: {
+        headerFields: ['contractNumber', 'invoiceNumber', 'consultantInfo', 'period'],
+        lineItemFields: ['date', 'hours', 'rate', 'description', 'total'],
+        footerFields: ['taxWithholding', 'netAmount', 'signature'],
+        customFields: {
+          'individual-specific': 'Individual consultant requirements',
+          'tax-tracking': 'Tax withholding and compliance'
+        }
+      },
+      spiritValidation: {
+        rules: ['Individual payment rules', 'tax withholding', 'time validation'],
+        checks: ['hourly rate compliance', 'time accuracy', 'tax compliance'],
+        autoValidation: true
+      }
+    }
+  ])
+
+  const [paymentRecipients] = useState<PaymentRecipient[]>([
+    {
+      id: 'recipient-001',
+      name: 'Reliable Mechanical Services',
+      type: 'subcontractor',
+      taxId: '12-3456789',
+      address: {
+        street: '123 Industrial Blvd',
+        city: 'Baton Rouge',
+        state: 'LA',
+        zip: '70801',
+        country: 'USA'
+      },
+      contact: {
+        name: 'John Smith',
+        email: 'john.smith@reliablemech.com',
+        phone: '+1-555-123-4567'
+      },
+      paymentInfo: {
+        method: 'ach',
+        accountNumber: '****1234',
+        routingNumber: '****5678',
+        bankName: 'First National Bank'
+      },
+      taxClassification: 'corporate',
+      certifications: {
+        sam: true,
+        cage: true,
+        duns: true,
+        taxClearance: true,
+        other: ['ISO 9001', 'ASME Certified']
+      },
+      status: 'active'
+    },
+    {
+      id: 'recipient-002',
+      name: 'Dr. Sarah Johnson',
+      type: 'individual',
+      taxId: '123-45-6789',
+      address: {
+        street: '456 Oak Street',
+        city: 'New Orleans',
+        state: 'LA',
+        zip: '70112',
+        country: 'USA'
+      },
+      contact: {
+        name: 'Dr. Sarah Johnson',
+        email: 'sarah.johnson@email.com',
+        phone: '+1-555-987-6543'
+      },
+      paymentInfo: {
+        method: 'check'
+      },
+      taxClassification: '1099',
+      certifications: {
+        sam: false,
+        cage: false,
+        duns: false,
+        taxClearance: true,
+        other: ['PhD Mechanical Engineering', 'PMP Certification']
+      },
+      status: 'active'
+    },
+    {
+      id: 'recipient-003',
+      name: 'Tech Solutions Consulting',
+      type: 'consultant',
+      taxId: '98-7654321',
+      address: {
+        street: '789 Tech Park',
+        city: 'Lafayette',
+        state: 'LA',
+        zip: '70501',
+        country: 'USA'
+      },
+      contact: {
+        name: 'Mike Davis',
+        email: 'mike.davis@techsolutions.com',
+        phone: '+1-555-456-7890'
+      },
+      paymentInfo: {
+        method: 'wire',
+        accountNumber: '****5678',
+        routingNumber: '****9012',
+        bankName: 'Tech Bank'
+      },
+      taxClassification: 'corporate',
+      certifications: {
+        sam: true,
+        cage: true,
+        duns: true,
+        taxClearance: true,
+        other: ['Microsoft Certified', 'AWS Certified']
+      },
+      status: 'active'
     }
   ])
 
@@ -1110,6 +1400,72 @@ export default function ContractWorkspacePage() {
       const eventDate = new Date(event.date)
       return eventDate >= today && eventDate <= futureDate
     })
+  }
+
+  // Invoice Template & Recipient Helper Functions
+  const getInvoiceTemplateByAgency = (agency: string) => {
+    return invoiceTemplates.find(template => template.agency === agency)
+  }
+
+  const getRecipientsByType = (type: string) => {
+    return paymentRecipients.filter(recipient => recipient.type === type)
+  }
+
+  const validateInvoiceCompliance = (invoice: Invoice) => {
+    const template = invoiceTemplates.find(t => t.id === invoice.templateId)
+    const recipient = paymentRecipients.find(r => r.id === invoice.recipientId)
+    
+    if (!template || !recipient) return { valid: false, issues: ['Template or recipient not found'] }
+
+    const issues: string[] = []
+    const recommendations: string[] = []
+
+    // Check required fields
+    template.requirements.requiredFields.forEach(field => {
+      if (!invoice.customFields[field]) {
+        issues.push(`Missing required field: ${field}`)
+      }
+    })
+
+    // Check certifications
+    template.requirements.certifications.forEach(cert => {
+      if (!recipient.certifications[cert as keyof typeof recipient.certifications]) {
+        issues.push(`Missing certification: ${cert}`)
+      }
+    })
+
+    // Check tax compliance for individuals
+    if (recipient.type === 'individual' && recipient.taxClassification === '1099') {
+      if (invoice.taxWithholding === 0) {
+        issues.push('Tax withholding required for 1099 individuals')
+        recommendations.push('Calculate and apply appropriate tax withholding')
+      }
+    }
+
+    // Check agency-specific requirements
+    if (template.agency === 'DoTS') {
+      if (!invoice.customFields['dots-specific']) {
+        issues.push('DoTS specific requirements not met')
+      }
+    }
+
+    return {
+      valid: issues.length === 0,
+      issues,
+      recommendations,
+      score: Math.max(0, 100 - (issues.length * 10))
+    }
+  }
+
+  const calculateTaxWithholding = (recipient: PaymentRecipient, amount: number) => {
+    if (recipient.taxClassification === '1099') {
+      // 1099 individuals typically have 10% withholding
+      return amount * 0.10
+    } else if (recipient.taxClassification === 'foreign') {
+      // Foreign entities may have different withholding rates
+      return amount * 0.30
+    }
+    return 0
   }
 
   const getSubcontractorStats = () => {
@@ -1804,6 +2160,8 @@ export default function ContractWorkspacePage() {
             <TabsTrigger value="overview" className="text-xs flex-shrink-0">Overview</TabsTrigger>
             <TabsTrigger value="invoice-builder" className="text-xs flex-shrink-0">Invoice Builder</TabsTrigger>
             <TabsTrigger value="clin-matrix" className="text-xs flex-shrink-0">CLIN Billing Matrix</TabsTrigger>
+            <TabsTrigger value="recipients" className="text-xs flex-shrink-0">Recipients</TabsTrigger>
+            <TabsTrigger value="templates" className="text-xs flex-shrink-0">Templates</TabsTrigger>
             <TabsTrigger value="export" className="text-xs flex-shrink-0">Export & Submission</TabsTrigger>
           </TabsList>
 
@@ -2004,6 +2362,116 @@ export default function ContractWorkspacePage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="recipients" className="space-y-6">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold">Payment Recipients</h4>
+                <Button className="btn-premium">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Recipient
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {paymentRecipients.map(recipient => (
+                  <Card key={recipient.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h5 className="font-medium">{recipient.name}</h5>
+                          <Badge variant="outline" className="text-xs">
+                            {recipient.type}
+                          </Badge>
+                          <Badge variant={recipient.status === 'active' ? 'default' : 'destructive'} className="text-xs">
+                            {recipient.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {recipient.taxClassification} • Tax ID: {recipient.taxId}
+                        </p>
+                        <div className="flex items-center space-x-4 text-xs text-gray-500">
+                          <span>Payment: {recipient.paymentInfo.method}</span>
+                          <span>Contact: {recipient.contact.name}</span>
+                          <span>Email: {recipient.contact.email}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {recipient.certifications.sam && <Badge variant="secondary" className="text-xs">SAM</Badge>}
+                        {recipient.certifications.cage && <Badge variant="secondary" className="text-xs">CAGE</Badge>}
+                        {recipient.certifications.duns && <Badge variant="secondary" className="text-xs">DUNS</Badge>}
+                        {recipient.certifications.taxClearance && <Badge variant="secondary" className="text-xs">Tax Clear</Badge>}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="templates" className="space-y-6">
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="font-semibold">Invoice Templates</h4>
+                <Button className="btn-premium">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Template
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {invoiceTemplates.map(template => (
+                  <Card key={template.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h5 className="font-medium">{template.name}</h5>
+                          <Badge variant="outline" className="text-xs">
+                            {template.agency}
+                          </Badge>
+                          <Badge variant="secondary" className="text-xs">
+                            {template.solicitationType}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <h6 className="font-medium text-gray-700 mb-1">Required Fields:</h6>
+                            <div className="flex flex-wrap gap-1">
+                              {template.requirements.requiredFields.slice(0, 3).map(field => (
+                                <Badge key={field} variant="outline" className="text-xs">
+                                  {field}
+                                </Badge>
+                              ))}
+                              {template.requirements.requiredFields.length > 3 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{template.requirements.requiredFields.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div>
+                            <h6 className="font-medium text-gray-700 mb-1">Validations:</h6>
+                            <div className="flex flex-wrap gap-1">
+                              {template.spiritValidation.checks.slice(0, 2).map(check => (
+                                <Badge key={check} variant="outline" className="text-xs">
+                                  {check}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant={template.spiritValidation.autoValidation ? 'default' : 'secondary'} className="text-xs">
+                          {template.spiritValidation.autoValidation ? 'Auto-Validate' : 'Manual'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Card>
+          </TabsContent>
+
           <TabsContent value="export" className="space-y-6">
             <Card className="p-6">
               <h4 className="font-semibold mb-4">Export & Submission</h4>
@@ -2034,6 +2502,32 @@ export default function ContractWorkspacePage() {
 
   const renderInvoiceBuilderModal = () => {
     if (!selectedCLIN) return null
+
+    const [selectedRecipient, setSelectedRecipient] = useState<PaymentRecipient | null>(null)
+    const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplate | null>(null)
+    const [invoiceAmount, setInvoiceAmount] = useState(selectedCLIN.unitPrice)
+    const [taxWithholding, setTaxWithholding] = useState(0)
+
+    const handleRecipientChange = (recipient: PaymentRecipient) => {
+      setSelectedRecipient(recipient)
+      const withholding = calculateTaxWithholding(recipient, invoiceAmount)
+      setTaxWithholding(withholding)
+      
+      // Auto-select template based on recipient type
+      if (recipient.type === 'individual') {
+        setSelectedTemplate(invoiceTemplates.find(t => t.id === 'template-individual') || null)
+      } else {
+        setSelectedTemplate(invoiceTemplates.find(t => t.id === 'template-dots') || null)
+      }
+    }
+
+    const handleAmountChange = (amount: number) => {
+      setInvoiceAmount(amount)
+      if (selectedRecipient) {
+        const withholding = calculateTaxWithholding(selectedRecipient, amount)
+        setTaxWithholding(withholding)
+      }
+    }
 
     return (
       <Dialog open={showInvoiceBuilder} onOpenChange={setShowInvoiceBuilder}>
@@ -2126,6 +2620,94 @@ export default function ContractWorkspacePage() {
               </div>
             </Card>
 
+            {/* Payment Recipient Selection */}
+            <Card className="p-4">
+              <h4 className="font-semibold mb-4">Payment Recipient</h4>
+              <div className="space-y-3">
+                {paymentRecipients.map(recipient => (
+                  <div
+                    key={recipient.id}
+                    className={`p-3 border rounded-lg cursor-pointer ${
+                      selectedRecipient?.id === recipient.id 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleRecipientChange(recipient)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h5 className="font-medium">{recipient.name}</h5>
+                        <p className="text-sm text-gray-600">{recipient.type} • {recipient.taxClassification}</p>
+                        <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500">
+                          <span>Tax ID: {recipient.taxId}</span>
+                          <span>Payment: {recipient.paymentInfo.method}</span>
+                          <span>Status: {recipient.status}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {recipient.certifications.sam && <Badge variant="outline" className="text-xs">SAM</Badge>}
+                        {recipient.certifications.cage && <Badge variant="outline" className="text-xs">CAGE</Badge>}
+                        {recipient.certifications.taxClearance && <Badge variant="outline" className="text-xs">Tax Clear</Badge>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Invoice Template Selection */}
+            {selectedRecipient && (
+              <Card className="p-4">
+                <h4 className="font-semibold mb-4">Invoice Template</h4>
+                <div className="space-y-3">
+                  {invoiceTemplates
+                    .filter(template => 
+                      selectedRecipient.type === 'individual' 
+                        ? template.id === 'template-individual'
+                        : template.agency === 'DoTS' || template.agency === 'US Army Corps of Engineers'
+                    )
+                    .map(template => (
+                      <div
+                        key={template.id}
+                        className={`p-3 border rounded-lg cursor-pointer ${
+                          selectedTemplate?.id === template.id 
+                            ? 'border-purple-500 bg-purple-50' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => setSelectedTemplate(template)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h5 className="font-medium">{template.name}</h5>
+                            <p className="text-sm text-gray-600">{template.agency} • {template.solicitationType}</p>
+                            <div className="mt-2">
+                              <h6 className="text-xs font-medium text-gray-700">Required Fields:</h6>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {template.requirements.requiredFields.slice(0, 3).map(field => (
+                                  <Badge key={field} variant="secondary" className="text-xs">
+                                    {field}
+                                  </Badge>
+                                ))}
+                                {template.requirements.requiredFields.length > 3 && (
+                                  <Badge variant="outline" className="text-xs">
+                                    +{template.requirements.requiredFields.length - 3} more
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant="outline" className="text-xs">
+                              {template.spiritValidation.autoValidation ? 'Auto-Validate' : 'Manual'}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </Card>
+            )}
+
             {/* Invoice Details */}
             <Card className="p-4">
               <h4 className="font-semibold mb-4">Invoice Details</h4>
@@ -2155,11 +2737,39 @@ export default function ContractWorkspacePage() {
                     </label>
                     <Input 
                       type="number" 
-                      defaultValue={selectedCLIN.unitPrice} 
+                      value={invoiceAmount}
+                      onChange={(e) => handleAmountChange(Number(e.target.value))}
                       className="w-full" 
                     />
                   </div>
                 </div>
+
+                {selectedRecipient && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tax Withholding
+                      </label>
+                      <Input 
+                        type="number" 
+                        value={taxWithholding}
+                        readOnly
+                        className="w-full bg-gray-50" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Net Payment
+                      </label>
+                      <Input 
+                        type="number" 
+                        value={invoiceAmount - taxWithholding}
+                        readOnly
+                        className="w-full bg-gray-50" 
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
 
@@ -2175,16 +2785,65 @@ export default function ContractWorkspacePage() {
                   <CheckCircle className="h-4 w-4 text-green-500" />
                   <span className="text-sm text-purple-800">Matches contract unit price.</span>
                 </div>
+                
+                {selectedRecipient && selectedRecipient.type === 'individual' && (
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-purple-800">Tax withholding calculated for 1099 individual.</span>
+                  </div>
+                )}
+                
+                {selectedTemplate && selectedTemplate.agency === 'DoTS' && (
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-purple-800">DoTS agency requirements validated.</span>
+                  </div>
+                )}
+                
+                {selectedTemplate && selectedTemplate.agency === 'US Army Corps of Engineers' && (
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-purple-800">USACE milestone requirements checked.</span>
+                  </div>
+                )}
+                
                 <div className="flex items-center space-x-2">
                   <AlertTriangle className="h-4 w-4 text-red-500" />
                   <span className="text-sm text-purple-800">
                     PM report is missing for final period: Office united decd of the deliverable.
                   </span>
                 </div>
+                
                 <div className="flex items-center space-x-2">
                   <CheckCircle className="h-4 w-4 text-green-500" />
                   <span className="text-sm text-purple-800">Billing dates validated.</span>
                 </div>
+                
+                {selectedRecipient && (
+                  <div className="mt-3 p-2 bg-white rounded border">
+                    <h6 className="text-xs font-medium text-purple-900 mb-1">Recipient Compliance:</h6>
+                    <div className="space-y-1 text-xs text-purple-800">
+                      {selectedRecipient.certifications.sam && (
+                        <div className="flex items-center space-x-1">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span>SAM registration valid</span>
+                        </div>
+                      )}
+                      {selectedRecipient.certifications.cage && (
+                        <div className="flex items-center space-x-1">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span>CAGE code verified</span>
+                        </div>
+                      )}
+                      {selectedRecipient.certifications.taxClearance && (
+                        <div className="flex items-center space-x-1">
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          <span>Tax clearance confirmed</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </Card>
 
