@@ -499,6 +499,10 @@ export default function ContractWorkspacePage() {
   const [activeInvoicingTab, setActiveInvoicingTab] = useState('overview')
   const [showInvoiceBuilder, setShowInvoiceBuilder] = useState(false)
   const [selectedCLIN, setSelectedCLIN] = useState<any>(null)
+  const [selectedRecipient, setSelectedRecipient] = useState<PaymentRecipient | null>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplate | null>(null)
+  const [invoiceAmount, setInvoiceAmount] = useState(0)
+  const [taxWithholding, setTaxWithholding] = useState(0)
 
   // Subcontractor Management State
   const [subcontractorFilter, setSubcontractorFilter] = useState('all')
@@ -1468,6 +1472,14 @@ export default function ContractWorkspacePage() {
     return 0
   }
 
+  const handleCLINSelection = (clin: any) => {
+    setSelectedCLIN(clin)
+    setInvoiceAmount(clin.unitPrice)
+    setSelectedRecipient(null)
+    setSelectedTemplate(null)
+    setTaxWithholding(0)
+  }
+
   const getSubcontractorStats = () => {
     const total = subcontractors.length
     const active = subcontractors.filter(s => s.status === 'active').length
@@ -2313,7 +2325,7 @@ export default function ContractWorkspacePage() {
               
               <div className="space-y-4">
                 {clins.map(clin => (
-                  <Card key={clin.id} className="p-4 border-2 border-dashed border-gray-200 hover:border-blue-300 cursor-pointer" onClick={() => setSelectedCLIN(clin)}>
+                                              <Card key={clin.id} className="p-4 border-2 border-dashed border-gray-200 hover:border-blue-300 cursor-pointer" onClick={() => handleCLINSelection(clin)}>
                     <div className="flex items-center justify-between">
                       <div>
                         <h5 className="font-medium">CLIN {clin.number} - {clin.title}</h5>
@@ -2502,11 +2514,6 @@ export default function ContractWorkspacePage() {
 
   const renderInvoiceBuilderModal = () => {
     if (!selectedCLIN) return null
-
-    const [selectedRecipient, setSelectedRecipient] = useState<PaymentRecipient | null>(null)
-    const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplate | null>(null)
-    const [invoiceAmount, setInvoiceAmount] = useState(selectedCLIN.unitPrice)
-    const [taxWithholding, setTaxWithholding] = useState(0)
 
     const handleRecipientChange = (recipient: PaymentRecipient) => {
       setSelectedRecipient(recipient)
