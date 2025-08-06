@@ -169,7 +169,7 @@ interface CLIN {
   number: string
   title: string
   description: string
-  type: 'FFP' | 'T&M' | 'CPFF' | 'IDIQ'
+  type: 'FFP' | 'T&M' | 'CPFF' | 'IDIQ' | 'Cost-Plus' | 'Fixed-Price-Level-of-Effort'
   quantity: number
   unit: string
   unitPrice: number
@@ -177,12 +177,84 @@ interface CLIN {
   period: string
   deliverables: string[]
   keyPersonnel: string[]
-  status: 'active' | 'completed' | 'suspended'
+  status: 'active' | 'completed' | 'suspended' | 'terminated' | 'under-review' | 'pending-approval' | 'modification-required' | 'funding-issue' | 'performance-issue' | 'quality-hold'
+  priority: 'critical' | 'high' | 'medium' | 'low'
+  riskLevel: 'low' | 'medium' | 'high' | 'critical'
+  performance: {
+    onSchedule: boolean
+    onBudget: boolean
+    qualityScore: number
+    issues: string[]
+    milestones: {
+      id: string
+      title: string
+      dueDate: string
+      status: 'pending' | 'in-progress' | 'completed' | 'overdue' | 'at-risk'
+      completion: number
+    }[]
+  }
+  funding: {
+    obligated: number
+    expended: number
+    remaining: number
+    burnRate: number
+    forecast: number
+    issues: string[]
+  }
+  compliance: {
+    regulatory: string[]
+    certifications: string[]
+    audits: {
+      date: string
+      type: string
+      result: 'pass' | 'fail' | 'conditional'
+      findings: string[]
+    }[]
+    status: 'compliant' | 'non-compliant' | 'under-review' | 'waiver-requested'
+  }
   billingMatrix: {
     monthly: number
     quarterly: number
     milestone: number
     deliverable: number
+    percentage: number
+    retainage: number
+  }
+  modifications: {
+    id: string
+    type: 'scope' | 'schedule' | 'funding' | 'personnel' | 'technical'
+    description: string
+    status: 'pending' | 'approved' | 'rejected' | 'under-review'
+    impact: 'low' | 'medium' | 'high' | 'critical'
+    date: string
+  }[]
+  subcontractors: {
+    id: string
+    name: string
+    role: string
+    percentage: number
+    status: 'active' | 'completed' | 'terminated' | 'under-review'
+  }[]
+  qualityControl: {
+    inspections: {
+      date: string
+      type: string
+      result: 'pass' | 'fail' | 'conditional'
+      findings: string[]
+    }[]
+    correctiveActions: {
+      id: string
+      description: string
+      status: 'open' | 'in-progress' | 'closed'
+      dueDate: string
+    }[]
+  }
+  spiritAnalysis: {
+    riskScore: number
+    performanceTrend: 'improving' | 'stable' | 'declining'
+    recommendations: string[]
+    automatedActions: string[]
+    alerts: string[]
   }
 }
 
@@ -546,20 +618,95 @@ export default function ContractWorkspacePage() {
       number: '0001',
       title: 'Program Management & Governance',
       description: 'Provide program management office (PMO) oversight, coordination of deliverables, schedule adherence, risk management, and compliance.',
-      type: 'FFP',
-      quantity: 1,
-      unit: 'Monthly',
+      type: 'T&M',
+      quantity: 12,
+      unit: 'months',
       unitPrice: 13333,
-      totalAmount: 460000,
-      period: 'Base + 2 Option Years',
+      totalAmount: 160000,
+      period: 'October 2025 - September 2026',
       deliverables: ['PM Plan', 'Risk Register', 'Monthly Progress Reports', 'Stakeholder Comms'],
       keyPersonnel: ['Program Manager (PMP)', 'Senior Scheduler', 'Quality Assurance Analyst'],
       status: 'active',
+      priority: 'high',
+      riskLevel: 'low',
+      performance: {
+        onSchedule: true,
+        onBudget: true,
+        qualityScore: 95,
+        issues: [],
+        milestones: [
+          {
+            id: 'milestone-001-1',
+            title: 'PMO Setup Complete',
+            dueDate: '2025-10-31',
+            status: 'completed',
+            completion: 100
+          },
+          {
+            id: 'milestone-001-2',
+            title: 'Risk Management Framework',
+            dueDate: '2025-11-30',
+            status: 'in-progress',
+            completion: 75
+          }
+        ]
+      },
+      funding: {
+        obligated: 160000,
+        expended: 40000,
+        remaining: 120000,
+        burnRate: 13333,
+        forecast: 160000,
+        issues: []
+      },
+      compliance: {
+        regulatory: ['FAR 52.232-7', 'FAR 52.232-8'],
+        certifications: ['ISO 9001', 'CMMI Level 3'],
+        audits: [
+          {
+            date: '2025-10-15',
+            type: 'Quality Assurance',
+            result: 'pass',
+            findings: []
+          }
+        ],
+        status: 'compliant'
+      },
       billingMatrix: {
         monthly: 13333,
         quarterly: 40000,
-        milestone: 50000,
-        deliverable: 25000
+        milestone: 0,
+        deliverable: 0,
+        percentage: 25,
+        retainage: 0
+      },
+      modifications: [],
+      subcontractors: [
+        {
+          id: 'sub-001',
+          name: 'Reliable Mechanical Services',
+          role: 'Risk Management Support',
+          percentage: 15,
+          status: 'active'
+        }
+      ],
+      qualityControl: {
+        inspections: [
+          {
+            date: '2025-10-20',
+            type: 'Process Review',
+            result: 'pass',
+            findings: []
+          }
+        ],
+        correctiveActions: []
+      },
+      spiritAnalysis: {
+        riskScore: 15,
+        performanceTrend: 'stable',
+        recommendations: ['Continue current performance', 'Monitor risk register updates'],
+        automatedActions: ['Monthly report generation scheduled'],
+        alerts: []
       }
     },
     {
@@ -567,20 +714,95 @@ export default function ContractWorkspacePage() {
       number: '0002',
       title: 'Cloud Architecture & Migration Services',
       description: 'Design and implement cloud architecture, migration planning, and execution services.',
-      type: 'T&M',
+      type: 'FFP',
       quantity: 1,
-      unit: 'Lump Sum',
-      unitPrice: 2100000,
-      totalAmount: 2100000,
-      period: 'Base + 2 Option Years',
+      unit: 'lump sum',
+      unitPrice: 350000,
+      totalAmount: 350000,
+      period: 'October 2025 - March 2026',
       deliverables: ['Cloud Architecture Design', 'Migration Plan', 'Implementation Report'],
       keyPersonnel: ['Cloud Architect', 'DevOps Engineer', 'Security Specialist'],
-      status: 'active',
+      status: 'completed',
+      priority: 'critical',
+      riskLevel: 'medium',
+      performance: {
+        onSchedule: true,
+        onBudget: true,
+        qualityScore: 98,
+        issues: [],
+        milestones: [
+          {
+            id: 'milestone-002-1',
+            title: 'Architecture Design Complete',
+            dueDate: '2025-12-31',
+            status: 'completed',
+            completion: 100
+          },
+          {
+            id: 'milestone-002-2',
+            title: 'Technical Specifications',
+            dueDate: '2025-02-28',
+            status: 'completed',
+            completion: 100
+          }
+        ]
+      },
+      funding: {
+        obligated: 350000,
+        expended: 350000,
+        remaining: 0,
+        burnRate: 0,
+        forecast: 350000,
+        issues: []
+      },
+      compliance: {
+        regulatory: ['FAR 52.232-1', 'FAR 52.232-2'],
+        certifications: ['AWS Certified', 'Azure Certified'],
+        audits: [
+          {
+            date: '2025-12-20',
+            type: 'Technical Review',
+            result: 'pass',
+            findings: []
+          }
+        ],
+        status: 'compliant'
+      },
       billingMatrix: {
-        monthly: 175000,
-        quarterly: 525000,
-        milestone: 700000,
-        deliverable: 350000
+        monthly: 0,
+        quarterly: 0,
+        milestone: 175000,
+        deliverable: 175000,
+        percentage: 100,
+        retainage: 0
+      },
+      modifications: [],
+      subcontractors: [
+        {
+          id: 'sub-002',
+          name: 'Tech Solutions Consulting',
+          role: 'Cloud Architecture Support',
+          percentage: 30,
+          status: 'completed'
+        }
+      ],
+      qualityControl: {
+        inspections: [
+          {
+            date: '2025-12-15',
+            type: 'Design Review',
+            result: 'pass',
+            findings: []
+          }
+        ],
+        correctiveActions: []
+      },
+      spiritAnalysis: {
+        riskScore: 5,
+        performanceTrend: 'improving',
+        recommendations: ['Excellent performance', 'Consider for future similar projects'],
+        automatedActions: ['Final payment processing'],
+        alerts: []
       }
     },
     {
@@ -590,18 +812,378 @@ export default function ContractWorkspacePage() {
       description: 'Implement cybersecurity measures and ensure compliance with federal regulations.',
       type: 'FFP',
       quantity: 1,
-      unit: 'Lump Sum',
-      unitPrice: 860000,
-      totalAmount: 860000,
-      period: 'Base + 2 Option Years',
+      unit: 'lump sum',
+      unitPrice: 143333,
+      totalAmount: 143333,
+      period: 'October 2025 - December 2025',
       deliverables: ['Security Assessment', 'Compliance Report', 'Implementation Plan'],
       keyPersonnel: ['Cybersecurity Specialist', 'Compliance Officer', 'Risk Analyst'],
-      status: 'active',
+      status: 'under-review',
+      priority: 'critical',
+      riskLevel: 'high',
+      performance: {
+        onSchedule: false,
+        onBudget: true,
+        qualityScore: 85,
+        issues: ['Delayed security testing due to system access issues'],
+        milestones: [
+          {
+            id: 'milestone-003-1',
+            title: 'Initial Assessment Complete',
+            dueDate: '2025-11-30',
+            status: 'completed',
+            completion: 100
+          },
+          {
+            id: 'milestone-003-2',
+            title: 'Penetration Testing',
+            dueDate: '2025-12-15',
+            status: 'overdue',
+            completion: 60
+          }
+        ]
+      },
+      funding: {
+        obligated: 143333,
+        expended: 86000,
+        remaining: 57333,
+        burnRate: 28667,
+        forecast: 143333,
+        issues: ['Potential cost overrun due to delays']
+      },
+      compliance: {
+        regulatory: ['FISMA', 'NIST 800-53', 'FAR 52.239-1'],
+        certifications: ['CISSP', 'CEH'],
+        audits: [
+          {
+            date: '2025-11-25',
+            type: 'Security Assessment',
+            result: 'conditional',
+            findings: ['Additional testing required for cloud components']
+          }
+        ],
+        status: 'under-review'
+      },
       billingMatrix: {
-        monthly: 71667,
-        quarterly: 215000,
-        milestone: 286667,
-        deliverable: 143333
+        monthly: 0,
+        quarterly: 0,
+        milestone: 71667,
+        deliverable: 71667,
+        percentage: 60,
+        retainage: 10
+      },
+      modifications: [
+        {
+          id: 'mod-003-1',
+          type: 'schedule',
+          description: 'Extension requested due to system access delays',
+          status: 'pending',
+          impact: 'medium',
+          date: '2025-12-01'
+        }
+      ],
+      subcontractors: [
+        {
+          id: 'sub-003',
+          name: 'Dr. Sarah Johnson',
+          role: 'Security Assessment Lead',
+          percentage: 40,
+          status: 'active'
+        }
+      ],
+      qualityControl: {
+        inspections: [
+          {
+            date: '2025-11-20',
+            type: 'Security Review',
+            result: 'conditional',
+            findings: ['Additional cloud security testing needed']
+          }
+        ],
+        correctiveActions: [
+          {
+            id: 'ca-003-1',
+            description: 'Complete cloud security testing',
+            status: 'in-progress',
+            dueDate: '2025-12-20'
+          }
+        ]
+      },
+      spiritAnalysis: {
+        riskScore: 65,
+        performanceTrend: 'declining',
+        recommendations: ['Expedite system access approval', 'Consider schedule extension'],
+        automatedActions: ['Risk alert sent to PM', 'Stakeholder notification scheduled'],
+        alerts: ['Schedule delay detected', 'Quality issues identified']
+      }
+    },
+    {
+      id: 'clin-004',
+      number: '0004',
+      title: 'Data Migration Services',
+      description: 'Migration of legacy transportation data to new cloud-based system with data validation and testing.',
+      type: 'T&M',
+      quantity: 6,
+      unit: 'months',
+      unitPrice: 25000,
+      totalAmount: 150000,
+      period: 'January 2026 - June 2026',
+      deliverables: ['Data migration plan', 'Legacy data extraction', 'Data validation reports'],
+      keyPersonnel: ['Data Architect', 'ETL Developer', 'QA Tester'],
+      status: 'pending-approval',
+      priority: 'high',
+      riskLevel: 'high',
+      performance: {
+        onSchedule: true,
+        onBudget: true,
+        qualityScore: 0,
+        issues: ['Awaiting final approval to begin'],
+        milestones: [
+          {
+            id: 'milestone-004-1',
+            title: 'Project Kickoff',
+            dueDate: '2026-01-15',
+            status: 'pending',
+            completion: 0
+          }
+        ]
+      },
+      funding: {
+        obligated: 150000,
+        expended: 0,
+        remaining: 150000,
+        burnRate: 0,
+        forecast: 150000,
+        issues: []
+      },
+      compliance: {
+        regulatory: ['FAR 52.239-1', 'Data Privacy Act'],
+        certifications: ['Data Management Professional'],
+        audits: [],
+        status: 'under-review'
+      },
+      billingMatrix: {
+        monthly: 25000,
+        quarterly: 75000,
+        milestone: 0,
+        deliverable: 0,
+        percentage: 0,
+        retainage: 0
+      },
+      modifications: [],
+      subcontractors: [
+        {
+          id: 'sub-004',
+          name: 'DataFlow Solutions',
+          role: 'Data Migration Specialist',
+          percentage: 50,
+          status: 'pending-approval'
+        }
+      ],
+      qualityControl: {
+        inspections: [],
+        correctiveActions: []
+      },
+      spiritAnalysis: {
+        riskScore: 45,
+        performanceTrend: 'stable',
+        recommendations: ['Proceed with approval', 'Ensure data backup procedures'],
+        automatedActions: ['Approval workflow initiated'],
+        alerts: ['Pending approval alert']
+      }
+    },
+    {
+      id: 'clin-005',
+      number: '0005',
+      title: 'System Integration Testing',
+      description: 'Comprehensive integration testing of all system components including third-party integrations.',
+      type: 'FFP',
+      quantity: 1,
+      unit: 'lump sum',
+      unitPrice: 200000,
+      totalAmount: 200000,
+      period: 'March 2026 - May 2026',
+      deliverables: ['Integration test plan', 'Test execution reports', 'Defect resolution log'],
+      keyPersonnel: ['Test Lead', 'Integration Specialist', 'QA Engineer'],
+      status: 'modification-required',
+      priority: 'critical',
+      riskLevel: 'critical',
+      performance: {
+        onSchedule: false,
+        onBudget: false,
+        qualityScore: 70,
+        issues: ['Scope creep identified', 'Additional testing environments needed'],
+        milestones: [
+          {
+            id: 'milestone-005-1',
+            title: 'Test Environment Setup',
+            dueDate: '2026-03-15',
+            status: 'at-risk',
+            completion: 30
+          }
+        ]
+      },
+      funding: {
+        obligated: 200000,
+        expended: 60000,
+        remaining: 140000,
+        burnRate: 30000,
+        forecast: 250000,
+        issues: ['Potential 25% cost overrun']
+      },
+      compliance: {
+        regulatory: ['FAR 52.246-1', 'FAR 52.246-2'],
+        certifications: ['ISTQB Certified'],
+        audits: [
+          {
+            date: '2026-03-10',
+            type: 'Process Audit',
+            result: 'fail',
+            findings: ['Test procedures not documented', 'Quality gates not established']
+          }
+        ],
+        status: 'non-compliant'
+      },
+      billingMatrix: {
+        monthly: 0,
+        quarterly: 0,
+        milestone: 100000,
+        deliverable: 100000,
+        percentage: 30,
+        retainage: 15
+      },
+      modifications: [
+        {
+          id: 'mod-005-1',
+          type: 'scope',
+          description: 'Additional testing environments and procedures required',
+          status: 'under-review',
+          impact: 'high',
+          date: '2026-03-05'
+        },
+        {
+          id: 'mod-005-2',
+          type: 'funding',
+          description: 'Request for additional funding due to scope expansion',
+          status: 'pending',
+          impact: 'critical',
+          date: '2026-03-08'
+        }
+      ],
+      subcontractors: [
+        {
+          id: 'sub-005',
+          name: 'Quality Assurance Pro',
+          role: 'Testing Services',
+          percentage: 60,
+          status: 'under-review'
+        }
+      ],
+      qualityControl: {
+        inspections: [
+          {
+            date: '2026-03-05',
+            type: 'Process Review',
+            result: 'fail',
+            findings: ['Inadequate test documentation', 'Missing quality procedures']
+          }
+        ],
+        correctiveActions: [
+          {
+            id: 'ca-005-1',
+            description: 'Develop comprehensive test procedures',
+            status: 'open',
+            dueDate: '2026-03-20'
+          },
+          {
+            id: 'ca-005-2',
+            description: 'Establish quality gates and checkpoints',
+            status: 'open',
+            dueDate: '2026-03-25'
+          }
+        ]
+      },
+      spiritAnalysis: {
+        riskScore: 85,
+        performanceTrend: 'declining',
+        recommendations: ['Immediate process improvement required', 'Consider contract modification'],
+        automatedActions: ['Risk escalation initiated', 'Stakeholder notification sent'],
+        alerts: ['Critical performance issues', 'Compliance violations detected']
+      }
+    },
+    {
+      id: 'clin-006',
+      number: '0006',
+      title: 'User Training and Documentation',
+      description: 'Development of user training materials and comprehensive system documentation.',
+      type: 'FFP',
+      quantity: 1,
+      unit: 'lump sum',
+      unitPrice: 75000,
+      totalAmount: 75000,
+      period: 'April 2026 - June 2026',
+      deliverables: ['Training materials', 'User manuals', 'Video tutorials'],
+      keyPersonnel: ['Training Specialist', 'Technical Writer', 'Instructional Designer'],
+      status: 'funding-issue',
+      priority: 'medium',
+      riskLevel: 'medium',
+      performance: {
+        onSchedule: true,
+        onBudget: false,
+        qualityScore: 0,
+        issues: ['Funding approval delayed'],
+        milestones: [
+          {
+            id: 'milestone-006-1',
+            title: 'Training Plan Development',
+            dueDate: '2026-04-15',
+            status: 'pending',
+            completion: 0
+          }
+        ]
+      },
+      funding: {
+        obligated: 75000,
+        expended: 0,
+        remaining: 75000,
+        burnRate: 0,
+        forecast: 75000,
+        issues: ['Funding release pending approval']
+      },
+      compliance: {
+        regulatory: ['FAR 52.232-1'],
+        certifications: ['Training Development Certified'],
+        audits: [],
+        status: 'under-review'
+      },
+      billingMatrix: {
+        monthly: 0,
+        quarterly: 0,
+        milestone: 37500,
+        deliverable: 37500,
+        percentage: 0,
+        retainage: 0
+      },
+      modifications: [],
+      subcontractors: [
+        {
+          id: 'sub-006',
+          name: 'Training Excellence Inc',
+          role: 'Training Development',
+          percentage: 80,
+          status: 'pending-approval'
+        }
+      ],
+      qualityControl: {
+        inspections: [],
+        correctiveActions: []
+      },
+      spiritAnalysis: {
+        riskScore: 35,
+        performanceTrend: 'stable',
+        recommendations: ['Expedite funding approval', 'Prepare contingency plan'],
+        automatedActions: ['Funding request reminder sent'],
+        alerts: ['Funding delay alert']
       }
     }
   ])
@@ -2324,55 +2906,172 @@ export default function ContractWorkspacePage() {
               <h4 className="font-semibold mb-4">Invoice Builder</h4>
               <p className="text-gray-600 mb-6">Select a CLIN to build an invoice</p>
               
-              <div className="space-y-4">
-                {clins.map(clin => (
-                                              <Card key={clin.id} className="p-4 border-2 border-dashed border-gray-200 hover:border-blue-300 cursor-pointer" onClick={() => handleCLINSelection(clin)}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h5 className="font-medium">CLIN {clin.number} - {clin.title}</h5>
-                        <p className="text-sm text-gray-600">{clin.description}</p>
-                        <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                          <span>Type: {clin.type}</span>
-                          <span>Unit: {clin.unit}</span>
-                          <span>Total: ${clin.totalAmount.toLocaleString()}</span>
+                                      <div className="space-y-4">
+                          {clins.map(clin => (
+                            <Card key={clin.id} className="p-4 border-2 border-dashed border-gray-200 hover:border-blue-300 cursor-pointer" onClick={() => handleCLINSelection(clin)}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <h5 className="font-medium">CLIN {clin.number} - {clin.title}</h5>
+                                    <Badge 
+                                      variant={
+                                        clin.status === 'active' ? 'default' :
+                                        clin.status === 'completed' ? 'secondary' :
+                                        clin.status === 'under-review' ? 'outline' :
+                                        clin.status === 'modification-required' ? 'destructive' : 'outline'
+                                      }
+                                      className="text-xs"
+                                    >
+                                      {clin.status.replace('-', ' ').toUpperCase()}
+                                    </Badge>
+                                    <Badge 
+                                      variant={
+                                        clin.priority === 'critical' ? 'destructive' :
+                                        clin.priority === 'high' ? 'default' :
+                                        clin.priority === 'medium' ? 'secondary' : 'outline'
+                                      }
+                                      className="text-xs"
+                                    >
+                                      {clin.priority.toUpperCase()}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mb-2">{clin.description}</p>
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs text-gray-500">
+                                    <div>
+                                      <span className="font-medium">Type:</span> {clin.type}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Total:</span> ${clin.totalAmount.toLocaleString()}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Progress:</span> {clin.performance?.milestones?.filter(m => m.status === 'completed').length || 0}/{clin.performance?.milestones?.length || 0}
+                                    </div>
+                                    <div>
+                                      <span className="font-medium">Risk:</span> 
+                                      <span className={`ml-1 ${
+                                        clin.riskLevel === 'critical' ? 'text-red-600' :
+                                        clin.riskLevel === 'high' ? 'text-orange-600' :
+                                        clin.riskLevel === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                                      }`}>
+                                        {clin.riskLevel.toUpperCase()}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {clin.performance?.issues && clin.performance.issues.length > 0 && (
+                                    <div className="mt-2 p-2 bg-red-50 rounded border-l-4 border-red-500">
+                                      <div className="text-xs font-medium text-red-800">Issues:</div>
+                                      <div className="text-xs text-red-700">
+                                        {clin.performance.issues.slice(0, 2).join(', ')}
+                                        {clin.performance.issues.length > 2 && ` +${clin.performance.issues.length - 2} more`}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <ChevronRight className="h-5 w-5 text-gray-400 ml-4" />
+                              </div>
+                            </Card>
+                          ))}
                         </div>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-gray-400" />
-                    </div>
-                  </Card>
-                ))}
-              </div>
             </Card>
           </TabsContent>
 
           <TabsContent value="clin-matrix" className="space-y-6">
-            <Card className="p-6">
-              <h4 className="font-semibold mb-4">CLIN Billing Matrix</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 text-sm font-medium text-gray-600">CLIN</th>
-                      <th className="text-left py-2 text-sm font-medium text-gray-600">Monthly</th>
-                      <th className="text-left py-2 text-sm font-medium text-gray-600">Quarterly</th>
-                      <th className="text-left py-2 text-sm font-medium text-gray-600">Milestone</th>
-                      <th className="text-left py-2 text-sm font-medium text-gray-600">Deliverable</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {clins.map(clin => (
-                      <tr key={clin.id} className="border-b">
-                        <td className="py-3 text-sm font-medium">CLIN {clin.number}</td>
-                        <td className="py-3 text-sm text-gray-600">${clin.billingMatrix.monthly.toLocaleString()}</td>
-                        <td className="py-3 text-sm text-gray-600">${clin.billingMatrix.quarterly.toLocaleString()}</td>
-                        <td className="py-3 text-sm text-gray-600">${clin.billingMatrix.milestone.toLocaleString()}</td>
-                        <td className="py-3 text-sm text-gray-600">${clin.billingMatrix.deliverable.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+                                  <Card className="p-6">
+                        <h4 className="font-semibold mb-4">CLIN Billing Matrix & Performance</h4>
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b">
+                                <th className="text-left py-2 text-sm font-medium text-gray-600">CLIN</th>
+                                <th className="text-left py-2 text-sm font-medium text-gray-600">Status</th>
+                                <th className="text-left py-2 text-sm font-medium text-gray-600">Progress</th>
+                                <th className="text-left py-2 text-sm font-medium text-gray-600">Funding</th>
+                                <th className="text-left py-2 text-sm font-medium text-gray-600">Billing</th>
+                                <th className="text-left py-2 text-sm font-medium text-gray-600">Risk</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {clins.map(clin => (
+                                <tr key={clin.id} className="border-b hover:bg-gray-50">
+                                  <td className="py-3">
+                                    <div>
+                                      <div className="text-sm font-medium">CLIN {clin.number}</div>
+                                      <div className="text-xs text-gray-500">{clin.title}</div>
+                                    </div>
+                                  </td>
+                                  <td className="py-3">
+                                    <Badge 
+                                      variant={
+                                        clin.status === 'active' ? 'default' :
+                                        clin.status === 'completed' ? 'secondary' :
+                                        clin.status === 'under-review' ? 'outline' :
+                                        clin.status === 'modification-required' ? 'destructive' : 'outline'
+                                      }
+                                      className="text-xs"
+                                    >
+                                      {clin.status.replace('-', ' ').toUpperCase()}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-3">
+                                    <div className="text-sm">
+                                      <div className="flex items-center space-x-2">
+                                        <div className="w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-blue-500 rounded-full" 
+                                            style={{ width: `${clin.performance?.milestones?.filter(m => m.status === 'completed').length / (clin.performance?.milestones?.length || 1) * 100}%` }}
+                                          />
+                                        </div>
+                                        <span className="text-xs text-gray-600">
+                                          {clin.performance?.milestones?.filter(m => m.status === 'completed').length || 0}/{clin.performance?.milestones?.length || 0}
+                                        </span>
+                                      </div>
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        Quality: {clin.performance?.qualityScore || 0}%
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="py-3">
+                                    <div className="text-sm">
+                                      <div className="text-gray-600">
+                                        ${clin.funding?.expended?.toLocaleString() || 0} / ${clin.funding?.obligated?.toLocaleString() || clin.totalAmount.toLocaleString()}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        {clin.funding?.remaining ? `$${clin.funding.remaining.toLocaleString()} remaining` : 'Fully expended'}
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="py-3">
+                                    <div className="text-sm text-gray-600">
+                                      <div>Monthly: ${clin.billingMatrix.monthly.toLocaleString()}</div>
+                                      <div>Quarterly: ${clin.billingMatrix.quarterly.toLocaleString()}</div>
+                                      <div>Milestone: ${clin.billingMatrix.milestone.toLocaleString()}</div>
+                                    </div>
+                                  </td>
+                                  <td className="py-3">
+                                    <div className="flex items-center space-x-2">
+                                      <Badge 
+                                        variant={
+                                          clin.riskLevel === 'critical' ? 'destructive' :
+                                          clin.riskLevel === 'high' ? 'default' :
+                                          clin.riskLevel === 'medium' ? 'secondary' : 'outline'
+                                        }
+                                        className="text-xs"
+                                      >
+                                        {clin.riskLevel.toUpperCase()}
+                                      </Badge>
+                                      {clin.spiritAnalysis?.riskScore && (
+                                        <span className="text-xs text-gray-500">
+                                          Score: {clin.spiritAnalysis.riskScore}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </Card>
           </TabsContent>
 
           <TabsContent value="recipients" className="space-y-6">
