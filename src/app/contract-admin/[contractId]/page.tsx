@@ -577,6 +577,20 @@ export default function ContractWorkspacePage() {
   const [selectedTemplate, setSelectedTemplate] = useState<InvoiceTemplate | null>(null)
   const [invoiceAmount, setInvoiceAmount] = useState(0)
   const [taxWithholding, setTaxWithholding] = useState(0)
+  const [invoiceData, setInvoiceData] = useState({
+    invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+    description: '',
+    quantity: 1,
+    unitPrice: 0,
+    lineItems: [] as any[],
+    periodOfPerformance: '',
+    certifications: [] as string[],
+    attachments: [] as string[],
+    notes: '',
+    customFields: {} as Record<string, any>
+  })
+  const [currentStep, setCurrentStep] = useState<'recipient' | 'template' | 'details' | 'review' | 'build'>('recipient')
+  const [showTemplatePreview, setShowTemplatePreview] = useState(false)
 
   // Subcontractor Management State
   const [subcontractorFilter, setSubcontractorFilter] = useState('all')
@@ -2062,6 +2076,19 @@ export default function ContractWorkspacePage() {
     setSelectedRecipient(null)
     setSelectedTemplate(null)
     setTaxWithholding(0)
+    setCurrentStep('recipient')
+    setInvoiceData({
+      invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+      description: '',
+      quantity: 1,
+      unitPrice: clin.unitPrice,
+      lineItems: [],
+      periodOfPerformance: '',
+      certifications: [],
+      attachments: [],
+      notes: '',
+      customFields: {}
+    })
     setShowInvoiceBuilder(true)
   }
 
@@ -3216,22 +3243,6 @@ export default function ContractWorkspacePage() {
 
   const renderInvoiceBuilderModal = () => {
     if (!selectedCLIN) return null
-
-    const [invoiceData, setInvoiceData] = useState({
-      invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
-      description: '',
-      quantity: 1,
-      unitPrice: selectedCLIN.unitPrice,
-      lineItems: [] as any[],
-      periodOfPerformance: '',
-      certifications: [] as string[],
-      attachments: [] as string[],
-      notes: '',
-      customFields: {} as Record<string, any>
-    })
-
-    const [currentStep, setCurrentStep] = useState<'recipient' | 'template' | 'details' | 'review' | 'build'>('recipient')
-    const [showTemplatePreview, setShowTemplatePreview] = useState(false)
 
     const handleRecipientChange = (recipient: PaymentRecipient) => {
       setSelectedRecipient(recipient)
